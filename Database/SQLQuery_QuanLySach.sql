@@ -1,4 +1,4 @@
-CREATE DATABASE QuanLySach
+﻿CREATE DATABASE QuanLySach
 ON PRIMARY
 (
     NAME = N'QuanLySach_Data',
@@ -32,12 +32,14 @@ create table NGUOIDUNG(
 	User_Role int not null default 0
 )
 drop table PHIEUMUON
-create table PHIEUMUON(
-	ID_PhieuMuon int identity(1,1) primary key,
-	ID_user int not null,
-	NgayMuon datetime,
-	NgayTra datetime,
-	foreign key (ID_user) references NGUOIDUNG(ID_User)
+CREATE TABLE PHIEUMUON(
+    ID_PhieuMuon INT IDENTITY(1,1) PRIMARY KEY,
+    ID_user INT NOT NULL,
+    NgayMuon DATETIME,
+    NgayTra DATETIME NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chưa trả', 
+    FOREIGN KEY (ID_user) REFERENCES NGUOIDUNG(ID_User),
+    CONSTRAINT CHK_TrangThai CHECK (TrangThai IN (N'Chưa trả', N'Đã trả', N'Quá hạn'))
 )
 drop table CTPM
 create table CTPM(
@@ -50,4 +52,5 @@ create table CTPM(
 )
 
 select *
-from SACH
+from PHIEUMUON
+
