@@ -1,7 +1,8 @@
 from .db_connect import connect_to_db
 from tkinter import messagebox
+from Application.UI import librarian_ui, readers_ui
 import pyodbc
-def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword):
+def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode):
     """
     Xử lý logic đăng ký người dùng, lấy dữ liệu từ các đối tượng Entry Tkinter
     và lưu vào CSDL.
@@ -10,6 +11,7 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword):
     username = txtUsername.get()
     sdt = txtSDT.get()
     password = txtPassword.get()
+    role = txtLibarianCode.get()
     
     # 1. Kiểm tra dữ liệu rỗng
     if not all([ho_ten, username, sdt, password]):
@@ -31,12 +33,16 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword):
             messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.")
             return
 
-        # 3. Thêm người dùng mới (Mặc định User_Role là 'User')
+        # 3. Thêm người dùng mới
+        if role == "AGU_LIB":
+            user_role = 1  # Thủ thư
+        else:
+            user_role = 0  # Đọc giả
         insert_query = """
         INSERT INTO NGUOIDUNG (HoTen, _Username, _Password, SDT, User_Role)
-        VALUES (?, ?, ?, ?, '0') 
+        VALUES (?, ?, ?, ?, ?) 
         """
-        cursor.execute(insert_query, (ho_ten, username, password, sdt))
+        cursor.execute(insert_query, (ho_ten, username, password, sdt, user_role))
         conn.commit()
 
         messagebox.showinfo("Thành công", "Đăng ký thành công!")
@@ -89,12 +95,17 @@ def handle_login(txtUsername, txtPassword):
         user = cursor.fetchone()
         if user:
             user_id, ho_ten, tempuser_role = user
-            if tempuser_role == '1':
+            if tempuser_role == 1:
                 user_role = 'Thủ thư'
             else:
                 user_role = 'Đọc giả'
             messagebox.showinfo("Thành công", f"Đăng nhập thành công!\nChào mừng {ho_ten} (ID: {user_id}, Role: {user_role})")
             # Ở đây bạn có thể chuyển đến giao diện chính của ứng dụng
+            if tempuser_role == 1:
+                librarian_ui.librarian_ui()
+            else:
+                readers_ui.reader_ui()
+
         else:
             messagebox.showerror("Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng.")
             return
