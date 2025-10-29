@@ -13,3 +13,4 @@ def reader_ui():
     # Thêm các thành phần giao diện khác cho đọc giả tại đây
 
     readers_main.mainloop()
+#
