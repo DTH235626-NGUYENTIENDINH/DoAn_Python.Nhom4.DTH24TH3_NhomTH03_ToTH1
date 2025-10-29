@@ -7,7 +7,7 @@ def Open_Register():
     register = Tk()
     register.title("Quản lý sách")
     register.resizable(width=False, height=False)
-    register.minsize(width=400, height=450)
+    register.minsize(width=400, height=470)
 
     lblRegister = Label(register, text="Đăng ký", font=("Arial", 20), fg="#09611C")
     lblRegister.place(x=150, y=50)
@@ -42,16 +42,19 @@ def Open_Register():
                             command=lambda: hr.toggle_password_visibility(checked_state, txtPassword))
     chbtnPassword.place(x=180, y=300)
 
+    #Nhập mã đăng ký thủ thư
+    lblLibarianCode = Label(register, text="Mã đăng ký thủ thư (nếu có):", font=("Arial", 12))
+    lblLibarianCode.place(x=50, y=330)
+    txtLibarianCode = Entry(register, width=18)
+    txtLibarianCode.place(x=250, y=333)
+
     btnRegister = Button(register, text="Đăng ký", width=15, bg="#09611C", fg="white",
-                    command=lambda: hr.handle_register(txtHoTen, txtUsername, txtSDT, txtPassword))                 
-    btnRegister.place(x=150, y=340)
-
+                        command=lambda: hr.handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode))
+    btnRegister.place(x=150, y=370)
     lblLogin = Label(register, text="Đã có tài khoản? Đăng nhập ngay", fg="blue", cursor="hand2")
-    lblLogin.place(x=120, y=390)
+    lblLogin.place(x=120, y=410)
     lblLogin.bind("<Button-1>", lambda event: Close_Register(register))
-
     register.mainloop()
-
 #Hàm dóng cửa sổ đăng ký
 def Close_Register(current_window):
     current_window.destroy()
