@@ -1,6 +1,8 @@
 from .db_connect import connect_to_db
 from tkinter import messagebox
 import pyodbc
+import bcrypt
+
 def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword):
     """
     Xử lý logic đăng ký người dùng, lấy dữ liệu từ các đối tượng Entry Tkinter
@@ -31,12 +33,19 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword):
             messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.")
             return
 
-        # 3. Thêm người dùng mới (Mặc định User_Role là 'User')
+        # 3. Mã hóa mật khẩu
+        password_temp = password.encode('utf-8')
+        hash_password  = bcrypt.hashpw(password_temp, bcrypt.gensalt())
+        hash_password_temp = hash_password.decode('utf-8')
+
+
+
+        # 4. Thêm người dùng mới (Mặc định User_Role là 'User')
         insert_query = """
         INSERT INTO NGUOIDUNG (HoTen, _Username, _Password, SDT, User_Role)
         VALUES (?, ?, ?, ?, '0') 
         """
-        cursor.execute(insert_query, (ho_ten, username, password, sdt))
+        cursor.execute(insert_query, (ho_ten, username, hash_password_temp, sdt))
         conn.commit()
 
         messagebox.showinfo("Thành công", "Đăng ký thành công!")
