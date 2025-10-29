@@ -55,4 +55,8 @@ create table CTPM(
     FOREIGN KEY (ID_PhieuMuon) REFERENCES PHIEUMUON(ID_PhieuMuon)
 )
 
-select *from PHIEUMUON
+select *
+from PHIEUMUON
+
+
+

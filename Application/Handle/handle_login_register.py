@@ -2,7 +2,6 @@ from .db_connect import connect_to_db
 from tkinter import messagebox
 from Application.UI import librarian_ui, readers_ui
 import pyodbc
-<<<<<<< HEAD
 import bcrypt
 
 
