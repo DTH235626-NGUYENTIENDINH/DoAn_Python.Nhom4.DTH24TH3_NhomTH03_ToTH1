@@ -54,3 +54,5 @@ create table CTPM(
 select *
 from PHIEUMUON
 
+
+
