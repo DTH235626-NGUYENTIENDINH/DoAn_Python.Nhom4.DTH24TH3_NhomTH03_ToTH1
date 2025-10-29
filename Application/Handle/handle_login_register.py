@@ -31,23 +31,19 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode)
     try:
         cursor = conn.cursor()
 
-        # 2. Kiểm tra Tên đăng nhập đã tồn tại (SỬ DỤNG TÊN CỘT CHÍNH XÁC: _Username)
+    # 2. Kiểm tra Tên đăng nhập đã tồn tại (SỬ DỤNG TÊN CỘT CHÍNH XÁC: _Username)
         cursor.execute("SELECT ID_user FROM NGUOIDUNG WHERE _Username = ?", (username,))
         if cursor.fetchone():
             messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.")
             return
 
 
-        # 3. Mã hóa mật khẩu
+    # 3. Mã hóa mật khẩu
         password_temp = password.encode('utf-8')
         hash_password  = bcrypt.hashpw(password_temp, bcrypt.gensalt())
         hash_password_temp = hash_password.decode('utf-8')
 
-
-
-        # 4. Thêm người dùng mới (Mặc định User_Role là 'User')
-
-        # 3. Thêm người dùng mới
+    # 4. Thêm người dùng mới
         if role == "AGU_LIB":
             user_role = 1  # Thủ thư
         else:
@@ -58,9 +54,7 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode)
         VALUES (?, ?, ?, ?, ?) 
         """
 
-        cursor.execute(insert_query, (ho_ten, username, hash_password_temp, sdt))
-
-        cursor.execute(insert_query, (ho_ten, username, password, sdt, user_role))
+        cursor.execute(insert_query, (ho_ten, username, hash_password_temp, sdt, user_role))
 
         conn.commit()
 
@@ -71,6 +65,7 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode)
         txtUsername.delete(0, 'end')
         txtSDT.delete(0, 'end')
         txtPassword.delete(0, 'end')
+        txtLibarianCode.delete(0, 'end')
         
     except pyodbc.Error as ex:
         messagebox.showerror("Lỗi CSDL", f"Lỗi khi lưu dữ liệu:\n{ex}")
