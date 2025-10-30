@@ -2,7 +2,11 @@ from .db_connect import connect_to_db
 from tkinter import messagebox
 from Application.UI import librarian_ui, readers_ui
 import pyodbc
+import bcrypt
+
+
 def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode):
+
     """
     Xử lý logic đăng ký người dùng, lấy dữ liệu từ các đối tượng Entry Tkinter
     và lưu vào CSDL.
@@ -27,22 +31,31 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode)
     try:
         cursor = conn.cursor()
 
-        # 2. Kiểm tra Tên đăng nhập đã tồn tại (SỬ DỤNG TÊN CỘT CHÍNH XÁC: _Username)
+    # 2. Kiểm tra Tên đăng nhập đã tồn tại (SỬ DỤNG TÊN CỘT CHÍNH XÁC: _Username)
         cursor.execute("SELECT ID_user FROM NGUOIDUNG WHERE _Username = ?", (username,))
         if cursor.fetchone():
             messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.")
             return
 
-        # 3. Thêm người dùng mới
+
+    # 3. Mã hóa mật khẩu
+        password_byte = password.encode('utf-8')
+        hash_password_byte  = bcrypt.hashpw(password_byte, bcrypt.gensalt())
+        hash_password = hash_password_byte.decode('utf-8')
+
+    # 4. Thêm người dùng mới
         if role == "AGU_LIB":
             user_role = 1  # Thủ thư
         else:
             user_role = 0  # Đọc giả
+
         insert_query = """
         INSERT INTO NGUOIDUNG (HoTen, _Username, _Password, SDT, User_Role)
         VALUES (?, ?, ?, ?, ?) 
         """
-        cursor.execute(insert_query, (ho_ten, username, password, sdt, user_role))
+
+        cursor.execute(insert_query, (ho_ten, username, hash_password, sdt, user_role))
+
         conn.commit()
 
         messagebox.showinfo("Thành công", "Đăng ký thành công!")
@@ -52,6 +65,7 @@ def handle_register(txtHoTen, txtUsername, txtSDT, txtPassword, txtLibarianCode)
         txtUsername.delete(0, 'end')
         txtSDT.delete(0, 'end')
         txtPassword.delete(0, 'end')
+        txtLibarianCode.delete(0, 'end')
         
     except pyodbc.Error as ex:
         messagebox.showerror("Lỗi CSDL", f"Lỗi khi lưu dữ liệu:\n{ex}")
@@ -91,21 +105,23 @@ def handle_login(txtUsername, txtPassword):
         cursor = conn.cursor()
 
         # 2. Kiểm tra Tên đăng nhập và Mật khẩu (SỬ DỤNG TÊN CỘT CHÍNH XÁC: _Username, _Password)
-        cursor.execute("SELECT ID_user, HoTen, User_Role FROM NGUOIDUNG WHERE _Username = ? AND _Password = ?", (username, password))
+        cursor.execute("SELECT ID_user, HoTen, User_Role, _Password FROM NGUOIDUNG WHERE _Username = ?", (username,))
         user = cursor.fetchone()
-        if user:
-            user_id, ho_ten, tempuser_role = user
-            if tempuser_role == 1:
-                user_role = 'Thủ thư'
+        if user:           
+            user_id, ho_ten, tempuser_role, stored_hash_password = user
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash_password.encode('utf-8')):
+                if tempuser_role == 1:
+                    user_role = 'Thủ thư'
+                else:
+                    user_role = 'Đọc giả'
+                messagebox.showinfo("Thành công", f"Đăng nhập thành công!\nChào mừng {ho_ten} (ID: {user_id}, Role: {user_role})")
+                # Ở đây bạn có thể chuyển đến giao diện chính của ứng dụng
+                if tempuser_role == 1:
+                    librarian_ui.librarian_ui()
+                else:
+                    readers_ui.reader_ui()
             else:
-                user_role = 'Đọc giả'
-            messagebox.showinfo("Thành công", f"Đăng nhập thành công!\nChào mừng {ho_ten} (ID: {user_id}, Role: {user_role})")
-            # Ở đây bạn có thể chuyển đến giao diện chính của ứng dụng
-            if tempuser_role == 1:
-                librarian_ui.librarian_ui()
-            else:
-                readers_ui.reader_ui()
-
+                messagebox.showerror("Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng.")
         else:
             messagebox.showerror("Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng.")
             return
