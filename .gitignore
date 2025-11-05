@@ -1,6 +1,0 @@
-# Bỏ qua các file database của SQL Server
-Database/QuanLySach.mdf
-Database/QuanLySach_log.ldf
-
-# Bỏ qua các thư mục cache của Python
-__pycache__/
