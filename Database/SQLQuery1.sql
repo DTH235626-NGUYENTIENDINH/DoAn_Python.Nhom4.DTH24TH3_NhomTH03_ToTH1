@@ -19,24 +19,20 @@ CREATE TABLE Sach (
     MaSach VARCHAR(7) PRIMARY KEY, -- Mã sách là 7 ký tự và là Khóa chính
     TenSach NVARCHAR(255) NOT NULL,
     TacGia NVARCHAR(100),
+	LoaiSach NVARCHAR(50),
     NhaXuatBan NVARCHAR(100),
     NamXuatBan INT,
-    SoLuongTonKho INT DEFAULT 0,
-    LoaiSach NVARCHAR(50),
-    
+    SoLuongTonKho INT DEFAULT 0,    
     -- Ràng buộc 1: Kiểm tra độ dài Mã Sách phải là 7
     CONSTRAINT CK_Sach_MaSachLength 
-        CHECK (LEN(MaSach) = 7),
-        
+        CHECK (LEN(MaSach) = 7),        
     -- Ràng buộc 2: Kiểm tra cấu trúc Mã Sách (2 Chữ A-Z | 2 Số | 3 Số)
     CONSTRAINT CK_Sach_MaSachStructure 
         CHECK (
             -- Kiểm tra 2 ký tự đầu (Phần LOẠI) là chữ cái in hoa (A-Z)
-            SUBSTRING(MaSach, 1, 2) NOT LIKE '%[^A-Z]%' AND
-            
+            SUBSTRING(MaSach, 1, 2) NOT LIKE '%[^A-Z]%' AND            
             -- Kiểm tra 2 ký tự tiếp theo (Phần NĂM) là số (0-9)
-            SUBSTRING(MaSach, 3, 2) NOT LIKE '%[^0-9]%' AND
-            
+            SUBSTRING(MaSach, 3, 2) NOT LIKE '%[^0-9]%' AND            
             -- Kiểm tra 3 ký tự cuối (Phần STT) là số (0-9)
             SUBSTRING(MaSach, 5, 3) NOT LIKE '%[^0-9]%'
         )
@@ -126,3 +122,10 @@ CREATE TABLE NguoiDungHeThong (
         Email NOT LIKE '%@.%'
     )
 );
+
+drop table Sach
+drop table DocGia
+drop table PhieuMuon
+drop table ChiTietMuonSach
+
+select * from Sach
