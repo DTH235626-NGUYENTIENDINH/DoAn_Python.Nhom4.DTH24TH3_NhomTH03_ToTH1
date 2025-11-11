@@ -107,7 +107,76 @@ def update_book(book_widget):
         cursor.close()
         conn.close()
 #3. Hàm xóa sách khỏi cơ sở dữ liệu
+def delete_book(book_widget):
+    MaSach = book_widget['MaSach'].get()
+    if not MaSach:
+        messagebox.showerror("Lỗi", "Vui lòng chọn sách để xóa.")
+        return
+    TenSach = book_widget['TenSach'].get()
+    confirm = messagebox.askyesno("Xác nhận xóa", 
+                                  f"Bạn có chắc chắn muốn xóa cuốn sách:\n\n"
+                                  f"Mã sách: {MaSach}\n"
+                                  f"Tên sách: {TenSach}\n\n"
+                                  "Hành động này không thể hoàn tác.")
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM Sach WHERE MaSach = ?", (MaSach,))
+        if cursor.rowcount == 0:
+            messagebox.showerror("Lỗi", "Mã sách không tồn tại trong cơ sở dữ liệu.")
+        else:
+            conn.commit()
+            messagebox.showinfo("Thành công", "Xóa sách thành công!")
+            for widget in book_widget.values():
+                widget.delete(0, 'end')            
+            load_book_data()  # Tải lại dữ liệu sách trong Treeview
+    except Exception as e:
+        messagebox.showerror("Lỗi", f"Đã xảy ra lỗi khi xóa sách: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 #4. Hàm tìm kiếm sách trong cơ sở dữ liệu
+def search_book(book_widget):
+    global book_treeview
+    tieuchuan = {
+        'MaSach': book_widget['MaSach'].get(),
+        'TenSach': book_widget['TenSach'].get(),
+        'TacGia': book_widget['TacGia'].get(),
+        'LoaiSach': book_widget['TheLoai'].get(),
+        'NhaXuatBan': book_widget['NhaXuatBan'].get(),
+        'NamXuatBan': book_widget['NamXuatBan'].get(),
+    }
+
+    searh_query = "SELECT MaSach, TenSach, TacGia, LoaiSach, NhaXuatBan, NamXuatBan, SoLuongTonKho FROM Sach WHERE 1=1"
+    where_clauses = []
+    params = []
+    for key, value in tieuchuan.items():
+        if value:
+            where_clauses.append(f"{key} LIKE ?")
+            params.append(f"%{value}%")
+    if not where_clauses:
+        load_book_data()
+        messagebox.showinfo("Thông báo", "Đã tải lại toàn bộ danh sách sách.")
+        return
+    final_query = searh_query + " AND " + " AND ".join(where_clauses)
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(final_query, params)
+        rows = cursor.fetchall()
+        for item in book_treeview.get_children():
+            book_treeview.delete(item)
+        if not rows:
+            messagebox.showinfo("Kết quả tìm kiếm", "Không tìm thấy sách phù hợp với tiêu chí.")
+        else:
+            for row in rows:
+                book_treeview.insert("", "end", values=list(row))
+            messagebox.showinfo("Kết quả tìm kiếm", f"Tìm thấy {len(rows)} cuốn sách phù hợp.")
+    except Exception as e:
+        messagebox.showerror("Lỗi", f"Đã xảy ra lỗi khi tìm kiếm sách: {e}")
+    finally:
+        cursor.close()
+        conn.close()   
 #5. Hiện thị danh sách sách từ cơ sở dữ liệu
 book_entries = None
 book_treeview = None
@@ -152,7 +221,13 @@ def on_book_select(event):
     for key, value in zip(entry_keys, book_data):
         if key in book_entries:
             book_entries[key].insert(0, value) # Điền dữ liệu mới
-
+#dọn textbox
+def clear_book_entries(book_widget):
+    for widget in book_widget.values():
+        widget.delete(0, 'end') 
+    if 'MaSach' in book_widget:
+        book_widget['MaSach'].focus()           
+#============================================================================================================================================
     
 
 

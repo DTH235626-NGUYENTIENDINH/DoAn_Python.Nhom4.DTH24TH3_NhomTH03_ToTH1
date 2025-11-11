@@ -250,14 +250,16 @@ def OpenMainWindow():
     btn_delete = ctk.CTkButton(button_area_frame, 
                                text="🗑️ Xóa Sách", 
                                fg_color="#F44336", 
-                               hover_color="#D32F2F")
+                               hover_color="#D32F2F",
+                               command=lambda: delete_book(book_widget))
     btn_delete.grid(row=2, column=0, pady=10, padx=20, sticky="ew")
 
     # Nút Tra cứu 
     btn_search = ctk.CTkButton(button_area_frame, 
                             text="🔍 Tra cứu", 
                             fg_color="#3C8EFA", 
-                            hover_color="#5AA0FF")
+                            hover_color="#5AA0FF",
+                            command=lambda: search_book(book_widget))
     btn_search.grid(row=3, column=0, pady=(10, 20), padx=20, sticky="ew")
 
 
@@ -286,6 +288,36 @@ def OpenMainWindow():
     load_book_data()  # Tải dữ liệu sách vào Treeview khi khởi tạo giao diện
     tree_view.bind("<<TreeviewSelect>>", on_book_select)
     content_frames["Quản lý sách"] = book_management_frame # Lưu Frame
+    # ========================================================
+    # ! BỔ SUNG: Tạo Context Menu (Menu chuột phải)
+    # ========================================================   
+    # 1. Tạo một Menu widget
+    context_menu = tk.Menu(root, 
+                           tearoff=0, 
+                           bg="#FFFFFF", 
+                           fg="#000000",
+                           activebackground=ACTIVE_COLOR, 
+                           activeforeground="#FFFFFF")
+                           
+    context_menu.add_command(label="✨ Làm mới Form (Clear)", 
+                             command=lambda: clear_book_entries(book_widget))
+    context_menu.add_command(label="🔄 Tải lại danh sách (Reload)", 
+                             command=load_book_data) # Tải lại toàn bộ Treeview
+    context_menu.add_separator()
+    context_menu.add_command(label="Thoát menu")
+
+    # 2. Tạo hàm để hiển thị menu tại vị trí chuột
+    def show_context_menu(event):
+        try:
+            context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            context_menu.grab_release()
+
+    # 3. Gán (Bind) sự kiện chuột phải (<Button-3>) cho các khu vực
+    book_management_frame.bind("<Button-3>", show_context_menu)
+    input_form_frame.bind("<Button-3>", show_context_menu)
+    list_area_frame.bind("<Button-3>", show_context_menu)
+    tree_view.bind("<Button-3>", show_context_menu)
 #============================================================================================================================================ 
     # --- 3. Tạo Frame Quản lý Độc giả ---
 #============================================================================================================================================    
