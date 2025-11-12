@@ -19,6 +19,7 @@ current_active_button = None
 content_frames = {}
 root = None # Khai báo root ở phạm vi toàn cục hoặc xử lý bên trong hàm
 book_widget = {}
+readeer_widget = {}
 
 #==========================Hàm quản lý chuyển đổi giao diện======================
 def switch_view(view_name, new_button):
@@ -346,31 +347,40 @@ def OpenMainWindow():
     intput_reader_form_frame .grid_columnconfigure(2, weight=0) # Cột Label 2 (Không giãn nở)
     intput_reader_form_frame .grid_columnconfigure(3, weight=1) # Cột Entry 2 (Giãn nở)
     # Mã độc giả 
-    ma_doc_gia_label = ctk.CTkLabel(intput_reader_form_frame , text="Mã độc giả (7 Ký tự):", font=ctk.CTkFont(size=13))
+    ma_doc_gia_label = ctk.CTkLabel(intput_reader_form_frame , text="Mã độc giả (7 Ký tự)*:", font=ctk.CTkFont(size=13))
     ma_doc_gia_label.grid(row=0, column=0, padx=(20, 10), pady=10, sticky="w")
-    entry_ma_doc_gia = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="VD: DG12001")
+    entry_ma_doc_gia = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="VD: DG0001")
     entry_ma_doc_gia.grid(row=0, column=1, padx=(0, 20), pady=10, sticky="ew")
     # Họ tên 
-    ho_ten_label = ctk.CTkLabel(intput_reader_form_frame , text="Họ tên:", font=ctk.CTkFont(size=13))
+    ho_ten_label = ctk.CTkLabel(intput_reader_form_frame , text="Họ tên*:", font=ctk.CTkFont(size=13))
     ho_ten_label.grid(row=0, column=2, padx=(20, 10), pady=10, sticky="w")
-    entry_ho_ten = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="Họ và tên độc giả (Bắt buộc)")
+    entry_ho_ten = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="Họ và tên độc giả")
     entry_ho_ten.grid(row=0, column=3, padx=(0, 20), pady=10, sticky="ew")
     # Địa chỉ
-    dia_chi_label = ctk.CTkLabel(intput_reader_form_frame , text="Địa chỉ:", font=ctk.CTkFont(size=13))
+    dia_chi_label = ctk.CTkLabel(intput_reader_form_frame , text="Địa chỉ*:", font=ctk.CTkFont(size=13))
     dia_chi_label.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="w")
     entry_dia_chi = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="Địa chỉ liên hệ")
     entry_dia_chi.grid(row=1, column=1, padx=(0, 20), pady=10, sticky="ew")
     # Số điện thoại
-    so_dien_thoai_label = ctk.CTkLabel(intput_reader_form_frame , text="Số điện thoại:", font=ctk.CTkFont(size=13))
+    so_dien_thoai_label = ctk.CTkLabel(intput_reader_form_frame , text="Số điện thoại*:", font=ctk.CTkFont(size=13))
     so_dien_thoai_label.grid(row=1, column=2, padx=(20, 10), pady=10, sticky="w")
     entry_so_dien_thoai = ctk.CTkEntry(intput_reader_form_frame , placeholder_text="Số điện thoại liên hệ")
     entry_so_dien_thoai.grid(row=1, column=3, padx=(0, 20), pady=10, sticky="ew")
     #Ngay sỉnh 
-    ngay_sinh_label = ctk.CTkLabel(intput_reader_form_frame , text="Ngày sinh:", font=ctk.CTkFont(size=13))
+    ngay_sinh_label = ctk.CTkLabel(intput_reader_form_frame , text="Ngày sinh*:", font=ctk.CTkFont(size=13))
     ngay_sinh_label.grid(row=2, column=0, padx=(20, 10), pady=10, sticky="w")
-    entry_ngay_sinh = DateEntry(intput_reader_form_frame , selexmode='day', date_pattern='dd-mm-yyyy',
+    entry_ngay_sinh = DateEntry(intput_reader_form_frame , selexmode='day', date_pattern='dd/mm/yyyy',
                                 width=18, background='white', foreground='black', borderwidth=1)
     entry_ngay_sinh.grid(row=2, column=1, padx=(0, 20), pady=10, sticky="ew")
+
+    #lưu trữ widget độc giả
+    readeer_widget = {
+        'MaDocGia': entry_ma_doc_gia,
+        'HoTen': entry_ho_ten,
+        'DiaChi': entry_dia_chi,
+        'SoDienThoai': entry_so_dien_thoai,
+        'NgaySinh': entry_ngay_sinh
+    }
 
     # Nút Thao tác
     reader_button_area_frame = ctk.CTkFrame(reader_management_frame, fg_color="#F0F0F0", corner_radius=10)
@@ -381,25 +391,29 @@ def OpenMainWindow():
     btn_add_reader = ctk.CTkButton(reader_button_area_frame, 
                                    text=" ➕ Thêm Mới", 
                                    fg_color="#4CAF50", 
-                                   hover_color="#388E3C")
+                                   hover_color="#388E3C",
+                                   command=lambda: add_reader(readeer_widget))
     btn_add_reader.grid(row=0, column=0, pady=(20, 10), padx=20, sticky="ew")
     # Nút Sửa   
     btn_update_reader = ctk.CTkButton(reader_button_area_frame, 
                                       text="🔄 Cập nhật", 
                                       fg_color="#FFC107", 
-                                      hover_color="#FFB300")
+                                      hover_color="#FFB300",
+                                      command=lambda: update_reader(readeer_widget))
     btn_update_reader.grid(row=1, column=0, pady=10, padx=20, sticky="ew")
     # Nút Xóa
     btn_delete_reader = ctk.CTkButton(reader_button_area_frame, 
                                       text="🗑️ Xóa Độc Giả", 
                                       fg_color="#F44336", 
-                                      hover_color="#D32F2F")   
+                                      hover_color="#D32F2F",
+                                      command=lambda: delete_reader(readeer_widget))   
     btn_delete_reader.grid(row=2, column=0, pady=10, padx=20, sticky="ew")
     # Nút Tra cứu
     btn_search_reader = ctk.CTkButton(reader_button_area_frame, 
                             text="🔍 Tra cứu", 
                             fg_color="#3C8EFA", 
-                            hover_color="#5AA0FF")
+                            hover_color="#5AA0FF",
+                            command=lambda: search_reader(readeer_widget))
     btn_search_reader.grid(row=3, column=0, pady=(10, 20), padx=20, sticky="ew")
     
     # Khu vực List/Bảng (Giãn nở)
@@ -410,6 +424,46 @@ def OpenMainWindow():
     reader_list_title = ctk.CTkLabel(reader_list_area_frame, text="DANH SÁCH CÁC ĐỘC GIẢ", 
                             font=ctk.CTkFont(size=14, weight="bold"), text_color="#3C8EFA") 
     reader_list_title.pack(padx=20, pady=20)
+    reader_column = ("Mã độc giả", "Họ tên", "Địa chỉ", "Số điện thoại", "Ngày sinh")
+    reader_tree_view = ttk.Treeview(reader_list_area_frame, columns=reader_column, show ="headings", height=10)
+    for col in reader_column:
+        reader_tree_view.heading(col, text=col)
+        reader_tree_view.column(col, width=100, anchor="center")
+    reader_tree_view.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+    reader_scrollbar = ctk.CTkScrollbar(reader_list_area_frame, orientation="vertical", command=reader_tree_view.yview)
+    reader_tree_view.configure(yscrollcommand=reader_scrollbar.set)
+    reader_scrollbar.pack(side="right", fill="y", pady=(0, 20))
+    register_reader_treeview(reader_tree_view)
+    register_reader_entries(readeer_widget)
+    load_reader_data()  # Tải dữ liệu độc giả vào Treeview khi khởi tạo giao diện
+    reader_tree_view.bind("<<TreeviewSelect>>", on_reader_select)
+    content_frames["Quản lý độc giả"] = reader_management_frame # Lưu Frame
+# bổ sung: Tạo Context Menu (Menu chuột phải) cho độc giả
+    # 1. Tạo một Menu widget
+    reader_context_menu = tk.Menu(root, 
+                           tearoff=0,
+                            bg="#FFFFFF",
+                            fg="#000000",
+                            activebackground=ACTIVE_COLOR,
+                            activeforeground="#FFFFFF")
+    reader_context_menu.add_command(label="✨ Làm mới Form (Clear)",    
+                                command=lambda: clear_reader_entries(readeer_widget))
+    reader_context_menu.add_command(label="🔄 Tải lại danh sách (Reload)"
+                                    , command=load_reader_data) # Tải lại toàn bộ Treeview
+    reader_context_menu.add_separator()
+    reader_context_menu.add_command(label="Thoát menu")
+    # 2. Tạo hàm để hiển thị menu tại vị trí chuột
+    def show_reader_context_menu(event):
+        try:
+            reader_context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            reader_context_menu.grab_release()
+    # 3. Gán (Bind) sự kiện chuột phải (<Button-3>) cho các khu vực
+    reader_management_frame.bind("<Button-3>", show_reader_context_menu)
+    intput_reader_form_frame .bind("<Button-3>", show_reader_context_menu)
+    reader_list_area_frame.bind("<Button-3>", show_reader_context_menu)
+    reader_tree_view.bind("<Button-3>", show_reader_context_menu)
+    
 #============================================================================================================================================ 
     # -- 4. Tạo Frame Mượn Trả Sách ---
 #============================================================================================================================================ 
