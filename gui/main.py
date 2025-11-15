@@ -6,6 +6,7 @@ from tkinter import messagebox
 from PIL import Image
 from tkcalendar import DateEntry
 from handlers.persistence_manager import *
+from handlers.persistense_manager_2 import *
 #==========================Cấu hình Màu sắc và Biến Toàn cục==========================
 # --- Cấu hình Màu sắc (Đã chỉnh sửa để dễ quản lý) ---
 SIDEBAR_BG = "#3C8EFA"
@@ -476,133 +477,414 @@ def OpenMainWindow():
 
     borrow_return_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR) 
 
-    # Cấu hình grid cho borrow_return_frame (3 cột, 3 hàng)
-    borrow_return_frame.grid_columnconfigure(0, weight=1) # Cột 0: Thông tin Độc giả
-    borrow_return_frame.grid_columnconfigure(1, weight=0) # Cột 1: Nút (Cố định, hẹp)
-    borrow_return_frame.grid_columnconfigure(2, weight=1) # Cột 2: Thông tin Sách
-    borrow_return_frame.grid_rowconfigure(0, weight=0) 
-    borrow_return_frame.grid_rowconfigure(1, weight=0) 
-    borrow_return_frame.grid_rowconfigure(2, weight=1) # Hàng 2: List (GIÃN NỞ)
-
+    # Cấu hình grid
+    borrow_return_frame.grid_columnconfigure(0, weight=1) 
+    borrow_return_frame.grid_columnconfigure(1, weight=0)
+    borrow_return_frame.grid_columnconfigure(2, weight=1)
+    borrow_return_frame.grid_rowconfigure(0, weight=0)
+    borrow_return_frame.grid_rowconfigure(1, weight=0)
+    borrow_return_frame.grid_rowconfigure(2, weight=1)
+    
     #========================================================
     # === HÀNG 0: Tiêu đề Chung ===
     #========================================================
     frame_title_br = ctk.CTkLabel(borrow_return_frame, 
-                                text="QUẢN LÝ MƯỢN TRẢ SÁCH", 
-                                font=ctk.CTkFont(size=24, weight="bold"), 
-                                text_color="#3C8EFA")
+                                   text="QUẢN LÝ MƯỢN TRẢ SÁCH", 
+                                   font=ctk.CTkFont(size=24, weight="bold"), 
+                                   text_color="#3C8EFA")
     frame_title_br.grid(row=0, column=0, columnspan=3, padx=20, pady=(15, 10), sticky="w")
-
-
+    
     #========================================================
-    # ===   HÀNG 1, CỘT 0: Form Độc giả & Phiếu Mượn      ===
+    #=============HÀNG 1, CỘT 0: frame nhập phiếu============
     #========================================================
-    borrow_form = ctk.CTkFrame(borrow_return_frame, fg_color="#FFFFFF", corner_radius=10)   
-    borrow_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+    input_borrow_frame = ctk.CTkFrame(borrow_return_frame, fg_color="#FFFFFF", corner_radius=10)   
+    input_borrow_frame.grid(row=1, column=0, sticky="new", padx=10, pady=10)
 
-    borrow_form.grid_columnconfigure(0, weight=0) # Cột Label 1 (Không giãn nở)
-    borrow_form.grid_columnconfigure(1, weight=1) # Cột Entry 1 (Giãn nở)
-
-    ctk.CTkLabel(borrow_form, text="THÔNG TIN PHIẾU MƯỢN", 
-                font=ctk.CTkFont(size=16, weight="bold"), 
-                text_color="#3C8EFA").grid(row=0, column=0, columnspan=2, padx=20, pady=(20, 10))
-    # Mã phiếu mượn
-    ma_phieu_label = ctk.CTkLabel(borrow_form, text="Mã phiếu mượn:", font=ctk.CTkFont(size=13))
+    input_borrow_frame.grid_columnconfigure(0, weight=0)
+    input_borrow_frame.grid_columnconfigure(1, weight=1)
+    input_borrow_frame.grid_columnconfigure(2, weight=0)
+    input_borrow_frame.grid_columnconfigure(3, weight=1)
+    
+    ctk.CTkLabel(input_borrow_frame, text="THÔNG TIN PHIẾU MƯỢN", 
+                 font=ctk.CTkFont(size=16, weight="bold"), 
+                 text_color="#3C8EFA").grid(row=0, column=0, columnspan=2, padx=20, pady=(20, 10))
+    #Mã phiếu
+    ma_phieu_label = ctk.CTkLabel(input_borrow_frame, text="Mã phiếu mượn*:", font=ctk.CTkFont(size=13))
     ma_phieu_label.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="w")
-    entry_ma_phieu = ctk.CTkEntry(borrow_form, placeholder_text="VD: PM12001")
+    entry_ma_phieu = ctk.CTkEntry(input_borrow_frame, placeholder_text="121125001")
     entry_ma_phieu.grid(row=1, column=1, padx=(0, 20), pady=10, sticky="ew")
-    # Mã độc giả
-    ma_doc_gia_label_br = ctk.CTkLabel(borrow_form, text="Mã độc giả:", font=ctk.CTkFont(size=13))
-    ma_doc_gia_label_br.grid(row=2, column=0, padx=(20, 10), pady=10, sticky="w")
-    doc_gia_options = ["Chọn mã độc giả", "DG12001", "DG12002", "DG12003"]
-    entry_ma_doc_gia_br = ctk.CTkComboBox(borrow_form, values=doc_gia_options)
-    entry_ma_doc_gia_br.set(doc_gia_options[0]) # Đặt giá trị mặc định là "Chọn mã độc giả"
-
-    entry_ma_doc_gia_br.grid(row=2, column=1, padx=(0, 20), pady=10, sticky="ew")
-    # Ngày mượn
-    ngay_muon_label = ctk.CTkLabel(borrow_form, text="Ngày mượn:", font=ctk.CTkFont(size=13))
+    #Mã độc giả
+    ma_doc_gia_label_br = ctk.CTkLabel(input_borrow_frame, text="Mã độc giả:", font=ctk.CTkFont(size=13))
+    ma_doc_gia_label_br.grid(row=1, column=2, padx=(20, 10), pady=10, sticky="w")
+    doc_gia_options = ["Chọn mã DG"] 
+    entry_ma_doc_gia_br = ctk.CTkComboBox(input_borrow_frame, values=doc_gia_options, 
+                                          command=on_reader_id_select) # Đã thêm command
+    entry_ma_doc_gia_br.set(doc_gia_options[0]) 
+    entry_ma_doc_gia_br.grid(row=1, column=3, padx=(0, 20), pady=10, sticky="ew") 
+    #Tên độc giả
+    ten_doc_gia_label = ctk.CTkLabel(input_borrow_frame, text="Tên độc giả:", font=ctk.CTkFont(size=13))
+    ten_doc_gia_label.grid(row=2, column=0, padx=(20, 10), pady=10, sticky="w")
+    entry_ten_doc_gia = ctk.CTkEntry(input_borrow_frame, placeholder_text="Tên độc giả (Hiển thị)", state='readonly') 
+    entry_ten_doc_gia.grid(row=2, column=1, columnspan=3, padx=(0, 20), pady=10, sticky="ew")
+    #Ngày mượn
+    ngay_muon_label = ctk.CTkLabel(input_borrow_frame, text="Ngày mượn:", font=ctk.CTkFont(size=13))
     ngay_muon_label.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
-    entry_ngay_muon = DateEntry(borrow_form, selexmode='day', date_pattern='dd-mm-yyyy',
-                                width=18, background='white', foreground='black', borderwidth=1)
-    entry_ngay_muon.grid(row=3, column=1, padx=(0, 20), pady=10, sticky="ew")
-    # Ngày hẹn trả
-    ngay_tra_du_kien_label = ctk.CTkLabel(borrow_form, text="Ngày trả dự kiến:", font=ctk.CTkFont(size=13))
-    ngay_tra_du_kien_label.grid(row=4, column=0, padx=(20, 10), pady=10, sticky="w")
-    ngay_tra_du_kien_label = DateEntry(borrow_form, selexmode='day', date_pattern='dd-mm-yyyy',
-                                width=18, background='white', foreground='black', borderwidth=1)
-    ngay_tra_du_kien_label.grid(row=4, column=1, padx=(0, 20), pady=10, sticky="ew")
+    entry_ngay_muon = DateEntry(input_borrow_frame, selectmode='day', date_pattern='dd/mm/yyyy',
+                                 width=18, background='white', foreground='black', borderwidth=1)
+    entry_ngay_muon.grid(row=3, column=1, padx=(0, 20), pady=10, sticky="ew")   
+    #Ngày hẹn trả
+    ngay_hen_tra_label = ctk.CTkLabel(input_borrow_frame, text="Ngày hẹn trả:", font=ctk.CTkFont(size=13))
+    ngay_hen_tra_label.grid(row=3, column=2, padx=(20, 10), pady=10, sticky="w")
+    entry_ngay_hen_tra = DateEntry(input_borrow_frame, selectmode='day', date_pattern='dd/mm/yyyy',
+                                     width=18, background='white', foreground='black', borderwidth=1)
+    entry_ngay_hen_tra.grid(row=3, column=3, padx=(0, 20), pady=10, sticky="ew")
+    # Nút TRA CỨU
+    btn_search_br = ctk.CTkButton(input_borrow_frame, 
+                                   text="🔍 TRA CỨU PHIẾU", 
+                                   fg_color="#3C8EFA", 
+                                   hover_color="#5AA0FF",
+                                   command=search_borrow_ticket) #! THÊM COMMAND
+    btn_search_br.grid(row=4, column=0, columnspan=2, pady=(15, 10), padx=20, sticky="ew")
 
+    # Nút HỦY
+    btn_cancel = ctk.CTkButton(input_borrow_frame, 
+                                text="❌ HỦY/LÀM MỚI", 
+                                fg_color="#777777", 
+                                hover_color="#555555",
+                                command=clear_borrow_form) #! THÊM COMMAND
+    btn_cancel.grid(row=4, column=2, columnspan=2, pady=(15, 10), padx=20, sticky="ew")
 
-    #=========================================================
-    # === HÀNG 1, CỘT 1: Khu vực Nút Thao tác (Mượn/Trả)   ===
-    #=========================================================
+    #========================================================
+    #=============HÀNG 1, CỘT 1: frame nút xử lý=============
+    #========================================================
     button_area_br = ctk.CTkFrame(borrow_return_frame, fg_color="#F0F0F0", corner_radius=10)
-    button_area_br.grid(row=1, column=1, sticky="nsew", padx=(0, 10), pady=10)
-    # Cấu hình grid cho khu vực nút (để các nút xếp chồng lên nhau và giãn nở)
+    button_area_br.grid(row=1, column=1, sticky="new", padx=10, pady=10) 
     button_area_br.grid_columnconfigure(0, weight=1)
-    # Nút Mượn Sách
-    btn_borrow = ctk.CTkButton(button_area_br, 
-                            text="📥 Mượn Sách", 
-                            fg_color="#4CAF50", 
-                            hover_color="#388E3C")
-    btn_borrow.grid(row=0, column=0, pady=(50, 10), padx=20, sticky="ew")
-    # Nút Trả Sách
-    btn_return = ctk.CTkButton(button_area_br,
-                            text="📤 Trả Sách", 
-                            fg_color="#F44336", 
-                            hover_color="#D32F2F")  
-    btn_return.grid(row=1, column=0, pady=10, padx=20, sticky="ew")
-    # Nút Tra cứu
-    btn_search_br = ctk.CTkButton(button_area_br, 
-                            text="🔍 Tra cứu", 
-                            fg_color="#3C8EFA", 
-                            hover_color="#5AA0FF")
-    btn_search_br.grid(row=2, column=0, pady=(10, 50), padx=20, sticky="ew")
+    
+    # --- Nhóm nút MƯỢN SÁCH ---
+    borrow_buttons_frame = ctk.CTkFrame(button_area_br, fg_color="transparent")
+    borrow_buttons_frame.grid(row=0, column=0, pady=10, padx=5, sticky="ew")
+    borrow_buttons_frame.grid_columnconfigure(0, weight=1)
+    
+    ctk.CTkLabel(borrow_buttons_frame, text="--- Mượn Sách ---", text_color="#555").grid(row=0, column=0, pady=(5,0))
+    
+    btn_add_detail = ctk.CTkButton(borrow_buttons_frame, 
+                                     text="➕ THÊM SÁCH", 
+                                     fg_color="#4CAF50", 
+                                     hover_color="#388E3C",
+                                     command=add_book_to_cart) #! THÊM COMMAND
+    btn_add_detail.grid(row=1, column=0, pady=10, padx=5, sticky="ew")
+
+    btn_delete_detail = ctk.CTkButton(borrow_buttons_frame, 
+                                        text="➖ XÓA SÁCH", 
+                                        fg_color="#F44336", 
+                                        hover_color="#D32F2F",
+                                        command=remove_book_from_cart) #! THÊM COMMAND
+    btn_delete_detail.grid(row=2, column=0, pady=10, padx=5, sticky="ew")
+    
+    btn_save_borrow = ctk.CTkButton(borrow_buttons_frame, 
+                                      text="💾 LƯU PHIẾU MƯỢN", 
+                                      fg_color="#3C8EFA", 
+                                      hover_color="#5AA0FF",
+                                      command=save_borrow_ticket) #! THÊM COMMAND
+    btn_save_borrow.grid(row=3, column=0, pady=(10, 0), padx=5, sticky="ew")
+
+    # --- Nhóm nút TRẢ SÁCH ---
+    return_buttons_frame = ctk.CTkFrame(button_area_br, fg_color="transparent")
+    return_buttons_frame.grid(row=1, column=0, pady=10, padx=5, sticky="ew")
+    return_buttons_frame.grid_columnconfigure(0, weight=1)
+    
+    ctk.CTkLabel(return_buttons_frame, text="--- Trả Sách ---", text_color="#555").grid(row=0, column=0)
+    
+    btn_update_return = ctk.CTkButton(return_buttons_frame,
+                                       text="⬆️ CẬP NHẬT TRẢ", 
+                                       fg_color="#FF4500", 
+                                       hover_color="#CC3000",
+                                       command=update_book_return) #! THÊM COMMAND
+    btn_update_return.grid(row=1, column=0, pady=10, padx=5, sticky="ew")
 
     #========================================================
-    # === HÀNG 1 CỘT 3: Khu Vực Thêm Sách MƯỢN             ==
+    #========HÀNG 1, CỘT 2: frame nhập chi tiết phiếu========
     #========================================================
-    book_form = ctk.CTkFrame(borrow_return_frame, fg_color="#FFFFFF", corner_radius=10)
-    book_form.grid(row=1, column=2, sticky="nsew", padx=10, pady=10)
-    book_form .grid_columnconfigure(0, weight=0) # Cột Label 1 (Không giãn nở)
-    book_form .grid_columnconfigure(1, weight=1) # Cột Entry 1 (Giãn nở)
-    ctk.CTkLabel(book_form , text="THÔNG TIN SÁCH MƯỢN", 
-                font=ctk.CTkFont(size=16, weight="bold"), 
-                text_color="#3C8EFA").grid(row=0, column=0, columnspan=2, padx=20, pady=(20, 10))
-    # Mã sách
-    ma_sach_label_br = ctk.CTkLabel(book_form , text="Mã sách:", font=ctk.CTkFont(size=13))
-    ma_sach_label_br.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="w")
-    sach_options = ["Chọn mã sách", "AB12001", "AB12002", "AB12003"]
-    entry_ma_sach_br = ctk.CTkComboBox(book_form , values=sach_options)
-    entry_ma_sach_br.set(sach_options[0]) # Đặt giá trị mặc định là "Chọn mã sách"
-    entry_ma_sach_br.grid(row=1, column=1, padx=(0, 20), pady=10, sticky="ew")
-    # Tên sách
-    ten_sach_label_br = ctk.CTkLabel(book_form , text="Tên sách:", font=ctk.CTkFont(size=13))
+    detail_tab_view = ctk.CTkTabview(borrow_return_frame,
+                                     segmented_button_fg_color=SIDEBAR_BG,
+                                     segmented_button_selected_color=ACTIVE_COLOR,
+                                     segmented_button_unselected_color=SIDEBAR_BG)
+    detail_tab_view.grid(row=1, column=2, sticky="new", padx=10, pady=10)
+
+    # --- Tab 1: THÊM SÁCH MƯỢN ---
+    tab_muon = detail_tab_view.add("Thêm Sách Mượn")
+    tab_muon.grid_columnconfigure(0, weight=0)
+    tab_muon.grid_columnconfigure(1, weight=1)
+    
+    #Mã sách
+    ma_sach_label_br = ctk.CTkLabel(tab_muon, text="Mã sách:", font=ctk.CTkFont(size=13))
+    ma_sach_label_br.grid(row=1, column=0, padx=(20, 10), pady=(20, 10), sticky="w")
+    sach_options = ["Chọn mã sách"]
+    entry_ma_sach_br = ctk.CTkComboBox(tab_muon, values=sach_options, 
+                                     command=on_book_id_select) # Đã thêm command
+    entry_ma_sach_br.set(sach_options[0])
+    entry_ma_sach_br.grid(row=1, column=1, padx=(0, 20), pady=(20, 10), sticky="ew")
+    
+    #Tên sách
+    ten_sach_label_br = ctk.CTkLabel(tab_muon, text="Tên sách:", font=ctk.CTkFont(size=13))
     ten_sach_label_br.grid(row=2, column=0, padx=(20, 10), pady=10, sticky="w")
-    entry_ten_sach_br = ctk.CTkEntry(book_form , placeholder_text="Tên cuốn sách")
+    entry_ten_sach_br = ctk.CTkEntry(tab_muon, placeholder_text="Tên cuốn sách (Hiển thị)", state='readonly') 
     entry_ten_sach_br.grid(row=2, column=1, padx=(0, 20), pady=10, sticky="ew")
     
+    #Số lượng
+    sl_sach_label_br = ctk.CTkLabel(tab_muon, text="Số lượng:", font=ctk.CTkFont(size=13))
+    sl_sach_label_br.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
+    entry_so_luong_br = ctk.CTkEntry(tab_muon, placeholder_text="Số lượng muốn mượn")
+    entry_so_luong_br.grid(row=3, column=1, padx=(0, 20), pady=10, sticky="ew")
+
+    # --- Tab 2: XỬ LÝ TRẢ SÁCH ---
+    tab_tra = detail_tab_view.add("Xử Lý Trả Sách")
+    tab_tra.grid_columnconfigure(0, weight=0)
+    tab_tra.grid_columnconfigure(1, weight=1)
+    
+    #Ngày trả
+    ngay_tra_tt_label = ctk.CTkLabel(tab_tra, text="Ngày trả TT:", font=ctk.CTkFont(size=13))
+    ngay_tra_tt_label.grid(row=1, column=0, padx=(20, 10), pady=(20, 10), sticky="w")
+    entry_ngay_tra_tt = DateEntry(tab_tra, selectmode='day', date_pattern='dd/mm/yyyy',
+                                  width=18, background='white', foreground='black', borderwidth=1)
+    entry_ngay_tra_tt.grid(row=1, column=1, padx=(0, 20), pady=(20, 10), sticky="ew")
+    
+    #Tình trạng sách
+    tinh_trang_label = ctk.CTkLabel(tab_tra, text="Tình trạng:", font=ctk.CTkFont(size=13))
+    tinh_trang_label.grid(row=2, column=0, padx=(20, 10), pady=10, sticky="w")
+    tinh_trang_options = ["Tốt", "Hư hỏng nhẹ", "Mất/Hỏng nặng"]
+    combo_tinh_trang = ctk.CTkComboBox(tab_tra, values=tinh_trang_options)
+    combo_tinh_trang.set("Tốt")
+    combo_tinh_trang.grid(row=2, column=1, padx=(0, 20), pady=10, sticky="ew")
+    
+    #Phí phạt
+    phi_phat_label = ctk.CTkLabel(tab_tra, text="Phí phạt:", font=ctk.CTkFont(size=13))
+    phi_phat_label.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
+    entry_phi_phat = ctk.CTkEntry(tab_tra, placeholder_text="0 (VNĐ)")
+    entry_phi_phat.grid(row=3, column=1, padx=(0, 20), pady=10, sticky="ew")
+
 
     #========================================================
-    # === HÀNG 2: Khu vực Bảng Lịch sử/Đang mượn (Giãn nở) ==
+    #=========HÀNG 2: frame hiển thị danh sách phiếu=========
     #========================================================
     list_area_br = ctk.CTkFrame(borrow_return_frame, fg_color="#FFFFFF", corner_radius=10)
     list_area_br.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=10, pady=(0, 10))
+    # Cấu hình grid cho list_area_br
+    list_area_br.grid_columnconfigure(0, weight=1) # Cột 0 cho Treeview Phiếu
+    list_area_br.grid_columnconfigure(1, weight=1) # Cột 1 cho Treeview Chi Tiết
+    list_area_br.grid_rowconfigure(1, weight=1) # Hàng 1 cho 2 Treeview
+    
+    list_title_br = ctk.CTkLabel(list_area_br, 
+                                   text="DANH SÁCH PHIẾU VÀ CHI TIẾT", 
+                                   font=ctk.CTkFont(size=16, weight="bold"), text_color="#3C8EFA")
+    list_title_br.grid(row=0, column=0, columnspan=2, padx=20, pady=20, sticky="w")
 
-    list_title_br = ctk.CTkLabel(list_area_br, text="LỊCH SỬ GIAO DỊCH / SÁCH ĐANG ĐƯỢC MƯỢN", 
-                                font=ctk.CTkFont(size=14, weight="bold"), text_color="#3C8EFA")
-    list_title_br.pack(padx=20, pady=20)
+    # --- Container cho 2 bảng ---
+    list_container = ctk.CTkFrame(list_area_br, fg_color="transparent")
+    list_container.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
+    list_container.grid_columnconfigure(0, weight=1) # Bảng Phiếu Mượn
+    list_container.grid_columnconfigure(1, weight=1) # Bảng Chi Tiết
+    list_container.grid_rowconfigure(0, weight=1) # Hàng cho 2 frame
 
+    # --- Bảng 1: Danh sách Phiếu Mượn (Master) ---
+    phieu_muon_frame = ctk.CTkFrame(list_container, fg_color="transparent")
+    phieu_muon_frame.grid(row=0, column=0, sticky="nsew", padx=(10,5), pady=(0,10))
+    
+    #! THÊM CẤU HÌNH GRID CHO SCROLLBAR
+    phieu_muon_frame.grid_rowconfigure(1, weight=1)
+    phieu_muon_frame.grid_columnconfigure(0, weight=1)
+    
+    ctk.CTkLabel(phieu_muon_frame, text="Danh Sách Phiếu Mượn (Click để xem chi tiết)", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
+    
+    phieu_muon_config = {
+        "ma_phieu": ("Mã Phiếu", 100, ctk.CENTER),
+        "ma_doc_gia": ("Mã Độc giả", 100, ctk.CENTER),
+        "ten_doc_gia": ("Tên Độc giả", 150, ctk.W),
+        "ngay_muon": ("Ngày Mượn", 100, ctk.CENTER),
+        "ngay_tra_dk": ("Hạn Trả", 100, ctk.CENTER),
+        "trang_thai": ("Trạng Thái", 120, ctk.CENTER)
+    }
+    phieu_muon_cols = tuple(phieu_muon_config.keys())
+    phieu_muon_treeview = ttk.Treeview(phieu_muon_frame, columns=phieu_muon_cols, show="headings", height=10, selectmode="browse")
+    for col_id, (text, width, anchor) in phieu_muon_config.items():
+        phieu_muon_treeview.heading(col_id, text=text)
+        phieu_muon_treeview.column(col_id, width=width, anchor=anchor)
+    
+    #! THÊM SCROLLBAR NGANG VÀ DỌC
+    pm_scrollbar_y = ctk.CTkScrollbar(phieu_muon_frame, orientation="vertical", command=phieu_muon_treeview.yview, width= 13)
+    pm_scrollbar_x = ctk.CTkScrollbar(phieu_muon_frame, orientation="horizontal", command=phieu_muon_treeview.xview, height= 13)
+    phieu_muon_treeview.configure(yscrollcommand=pm_scrollbar_y.set, xscrollcommand=pm_scrollbar_x.set)
 
+    #! ĐẶT VÀO GRID
+    phieu_muon_treeview.grid(row=1, column=0, sticky="nsew")
+    pm_scrollbar_y.grid(row=1, column=1, sticky="ns")
+    pm_scrollbar_x.grid(row=2, column=0, sticky="ew") # Ngang
+    
+    # --- Bảng 2: Chi Tiết Sách Mượn (Detail / Giỏ hàng) ---
+    chi_tiet_frame = ctk.CTkFrame(list_container, fg_color="transparent")
+    chi_tiet_frame.grid(row=0, column=1, sticky="nsew", padx=(5,10), pady=(0,10))
+    
+    #! THÊM CẤU HÌNH GRID CHO SCROLLBAR
+    chi_tiet_frame.grid_rowconfigure(1, weight=1)
+    chi_tiet_frame.grid_columnconfigure(0, weight=1)
+
+    ctk.CTkLabel(chi_tiet_frame, text="Chi Tiết Sách Mượn", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
+
+    chi_tiet_config = {
+        "ma_sach": ("Mã Sách", 80, ctk.W),
+        "ten_sach": ("Tên Sách", 150, ctk.W),
+        "so_luong": ("SL", 40, ctk.CENTER),
+        "ngay_tra_tt": ("Ngày Trả TT", 100, ctk.CENTER),
+        "tinh_trang": ("Tình Trạng", 100, ctk.W),
+        "phi_phat": ("Phí Phạt", 80, ctk.E)
+    }
+    chi_tiet_cols = tuple(chi_tiet_config.keys())
+    chi_tiet_treeview = ttk.Treeview(chi_tiet_frame, columns=chi_tiet_cols, show="headings", height=10, selectmode="browse")
+    for col_id, (text, width, anchor) in chi_tiet_config.items():
+        chi_tiet_treeview.heading(col_id, text=text)
+        chi_tiet_treeview.column(col_id, width=width, anchor=anchor)
+    
+    #! THÊM SCROLLBAR NGANG VÀ DỌC
+    ct_scrollbar_y = ctk.CTkScrollbar(chi_tiet_frame, orientation="vertical", command=chi_tiet_treeview.yview, width= 13)
+    ct_scrollbar_x = ctk.CTkScrollbar(chi_tiet_frame, orientation="horizontal", command=chi_tiet_treeview.xview, height= 13)
+    chi_tiet_treeview.configure(yscrollcommand=ct_scrollbar_y.set, xscrollcommand=ct_scrollbar_x.set)
+
+    #! ĐẶT VÀO GRID
+    chi_tiet_treeview.grid(row=1, column=0, sticky="nsew")
+    ct_scrollbar_y.grid(row=1, column=1, sticky="ns")
+    ct_scrollbar_x.grid(row=2, column=0, sticky="ew") # Ngang
+
+    #=============================================================================
+    # KHỐI KẾT NỐI SỰ KIỆN (ĐÃ CẬP NHẬT)
+    #=============================================================================
+    borrow_widgets_dict = {
+        # Frame Phiếu
+        "reader_combo": entry_ma_doc_gia_br,
+        "reader_name": entry_ten_doc_gia,
+        "ma_phieu": entry_ma_phieu,
+        "ngay_muon": entry_ngay_muon,
+        "ngay_hen_tra": entry_ngay_hen_tra,
+        
+        # Tab Thêm Sách
+        "book_combo": entry_ma_sach_br,
+        "book_name": entry_ten_sach_br,
+        "so_luong": entry_so_luong_br,
+        
+        # Tab Trả Sách
+        "ngay_tra_tt": entry_ngay_tra_tt,
+        "tinh_trang": combo_tinh_trang,
+        "phi_phat": entry_phi_phat,
+        
+        # Treeviews
+        "phieu_muon_tree": phieu_muon_treeview,
+        "cart_tree": chi_tiet_treeview,
+        
+        # Tab View (để chuyển tab)
+        "tab_view": detail_tab_view
+    }
+    register_borrow_widgets(borrow_widgets_dict)
+    
+    # Tải dữ liệu
+    load_reader_ids_to_combobox()
+    load_book_ids_to_combobox()
+    load_borrow_list() 
+    
+    #! BỔ SUNG: Gán sự kiện click cho 2 Treeview
+    phieu_muon_treeview.bind("<<TreeviewSelect>>", on_phieu_muon_select)
+    chi_tiet_treeview.bind("<<TreeviewSelect>>", on_chi_tiet_select)
+    
     content_frames["Mượn trả sách"] = borrow_return_frame # Lưu Frame
 
-    
 #============================================================================================================================================ 
     # -- 5. Tạo Frame Thống kê Báo cáo ---
 #============================================================================================================================================ 
-    statistics_frame = ctk.CTkFrame(main_content_area)
-    stats_label = ctk.CTkLabel(statistics_frame, text="THỐNG KÊ BÁO CÁO", font=ctk.CTkFont(size=30))
-    stats_label.pack(expand=True)
+    ROOT_BG_COLOR = "#E1F4FD" 
+
+    statistics_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR)
+    statistics_frame.grid_columnconfigure(0, weight=1) # Chỉ 1 cột chính
+    statistics_frame.grid_rowconfigure(0, weight=0) # Hàng 0: Tiêu đề
+    statistics_frame.grid_rowconfigure(1, weight=0) # Hàng 1: Bộ lọc/Điều khiển
+    statistics_frame.grid_rowconfigure(2, weight=1) # Hàng 2: Biểu đồ/Bảng (GIÃN NỞ)
+
+    #========================================================
+    # === HÀNG 0: Tiêu đề Chung ===
+    #========================================================
+    frame_title_stats = ctk.CTkLabel(statistics_frame, 
+                                    text="BẢNG ĐIỀU KHIỂN & BÁO CÁO THỐNG KÊ", 
+                                    font=ctk.CTkFont(size=24, weight="bold"), 
+                                    text_color="#3C8EFA")
+    frame_title_stats.grid(row=0, column=0, padx=20, pady=(15, 10), sticky="w")
+
+
+    # === HÀNG 1: Khu vực Lựa chọn Báo cáo (Control Panel) ===
+    control_panel_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
+    control_panel_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
+    control_panel_frame.grid_columnconfigure((0, 2), weight=0) # Labels
+    control_panel_frame.grid_columnconfigure((1, 3), weight=1) # Entries (giãn nở tốt)
+    control_panel_frame.grid_columnconfigure((4, 6), weight=0) # Labels Từ/Đến
+    control_panel_frame.grid_columnconfigure((5, 7), weight=1) # DateEntries (Giãn nở vừa phải)
+    control_panel_frame.grid_columnconfigure((8, 9), weight=1) # Nút (Sử dụng columnspan)
+
+    DATE_STYLE = {'date_pattern': 'dd/mm/yyyy', 'selectmode': 'day', 'width': 12, 'background': 'white', 'foreground': 'black', 'borderwidth': 1}
+
+    # ----------------------------------------------------
+    # --- HÀNG 0: Loại Báo cáo và Top N (Bộ lọc chính) ---
+    # ----------------------------------------------------
+
+    # 1. Lựa chọn Loại Báo cáo
+    ctk.CTkLabel(control_panel_frame, text="Loại Báo cáo:", font=ctk.CTkFont(size=13)).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+    combo_report_type = ctk.CTkComboBox(control_panel_frame, 
+                                        values=["Top sách được mượn nhiều nhất", 
+                                                "Top độc giả mượn nhiều sách nhất", 
+                                                "Top sách có số lượng tồn nhiều nhất",
+                                                "Top sách được mượn ít nhất", 
+                                                "Top độc giả mượn ít sách nhất", 
+                                                "Top sách có số lượng tồn ít nhất"])
+    combo_report_type.grid(row=0, column=1, padx=(5, 15), pady=10, sticky="ew")
+
+    # 2. Giá trị N
+    ctk.CTkLabel(control_panel_frame, text="Top N:", font=ctk.CTkFont(size=13)).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
+    entry_top_n = ctk.CTkEntry(control_panel_frame, placeholder_text="VD: 5")
+    entry_top_n.grid(row=0, column=3, padx=(5, 15), pady=10, sticky="ew")
+    entry_top_n.insert(0, "10") 
+
+    # ----------------------------------------------------
+    # --- HÀNG 1: Phạm vi Ngày tháng và Nút Thao tác ---
+    # ----------------------------------------------------
+
+    # 3. Lựa chọn Phạm vi Thời gian (DateEntry)
+    ctk.CTkLabel(control_panel_frame, text="Từ Ngày:", font=ctk.CTkFont(size=13)).grid(row=1, column=0, padx=(15, 5), pady=(0, 15), sticky="w")
+    entry_date_from = DateEntry(control_panel_frame, **DATE_STYLE)
+    entry_date_from.grid(row=1, column=1, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+    ctk.CTkLabel(control_panel_frame, text="Đến Ngày:", font=ctk.CTkFont(size=13)).grid(row=1, column=2, padx=(15, 5), pady=(0, 15), sticky="w")
+    entry_date_to = DateEntry(control_panel_frame, **DATE_STYLE)
+    entry_date_to.grid(row=1, column=3, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+
+    # 4. Nút Xem Báo cáo
+    btn_view_report = ctk.CTkButton(control_panel_frame, text="🔍 Xem Báo cáo", fg_color="#3C8EFA", hover_color="#5AA0FF",
+                                    command=lambda: generate_report_and_chart(combo_report_type.get(), entry_top_n.get(), entry_date_from.get(), entry_date_to.get(), display_report_frame))
+    btn_view_report.grid(row=0, column=7, padx=(5, 15), pady=(0, 15), sticky="ew") 
+
+    # 5. Nút Xuất Excel
+    btn_export_excel = ctk.CTkButton(control_panel_frame, text="📄 Xuất Excel", fg_color="#4CAF50", hover_color="#388E3C",
+                                    command=lambda: export_data_to_excel(combo_report_type.get(), entry_top_n.get(), entry_date_from.get(), entry_date_to.get()))
+    btn_export_excel.grid(row=1, column=7, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+    #========================================================
+    # === HÀNG 2: Khu vực Biểu đồ/Bảng dữ liệu (Giãn nở) ===
+    #========================================================
+    display_report_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
+    display_report_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
+
+    # Khu vực này sẽ là nơi bạn nhúng biểu đồ Matplotlib hoặc Treeview kết quả
+    ctk.CTkLabel(display_report_frame, 
+                text="KHU VỰC HIỂN THỊ BIỂU ĐỒ HOẶC BẢNG DỮ LIỆU KẾT QUẢ", 
+                font=ctk.CTkFont(size=16, weight="bold")).pack(expand=True, padx=50, pady=50)
+
+
     content_frames["Thống kê báo cáo"] = statistics_frame # Lưu Frame
 #============================================================================================================================================ 
     # -- 6. Tạo Frame Cài đặt ---
