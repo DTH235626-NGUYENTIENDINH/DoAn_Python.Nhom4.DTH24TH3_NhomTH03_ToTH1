@@ -1,15 +1,16 @@
-﻿CREATE DATABASE QuanLySach
+﻿DROP DATABASE QuanLySach
+CREATE DATABASE QuanLySach
 ON PRIMARY
 (
     NAME = QuanLySach_Data,
-    FILENAME = 'D:\AGU\2025-2026_hoc_hi_1\Python\DoAn_QuanLySach\Database\QuanLySach.mdf',
+    FILENAME = 'D:\Inclass_Sources\Python\DoAn_Python.Nhom4.DTH24TH3_NhomTH03_ToTH1-development\Database\QuanLySach.mdf',
     SIZE = 10MB,
     FILEGROWTH = 5MB
 )
 LOG ON
 (
     NAME = QuanLySach_Log,
-    FILENAME = 'D:\AGU\2025-2026_hoc_hi_1\Python\DoAn_QuanLySach\Database\QuanLySach_log.ldf',
+    FILENAME = 'D:\Inclass_Sources\Python\DoAn_Python.Nhom4.DTH24TH3_NhomTH03_ToTH1-development\Database\QuanLySach_log.ldf',
     SIZE = 10MB,
     FILEGROWTH = 5MB
 );
@@ -126,6 +127,7 @@ drop table DocGia
 drop table PhieuMuon
 drop table ChiTietPhieuMuon
 
+select * from NguoiDungHeThong
 select * from Sach
 select * from DocGia
 select * from PhieuMuon

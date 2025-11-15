@@ -22,6 +22,11 @@ root = None # Khai báo root ở phạm vi toàn cục hoặc xử lý bên tron
 book_widget = {}
 readeer_widget = {}
 
+#==========================Hàm xử lý đăng xuất=================================
+def do_logout():
+    if messagebox.askyesno("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất không?"):
+        root.destroy()  # Đóng cửa sổ chính
+
 #==========================Hàm quản lý chuyển đổi giao diện======================
 def switch_view(view_name, new_button):
     global current_active_button
@@ -897,8 +902,7 @@ def OpenMainWindow():
     btn_borrowReturnManagement.configure(command=lambda btn=btn_borrowReturnManagement: switch_view("Mượn trả sách", btn))
     btn_statisticsReports.configure(command=lambda btn=btn_statisticsReports: switch_view("Thống kê báo cáo", btn))
     btn_settings.configure(command=lambda btn=btn_settings: switch_view("Cài đặt", btn))
-    btn_logout.configure(command=lambda: messagebox.showinfo("Đăng xuất", "Bạn đã đăng xuất thành công!"))
-
+    btn_logout.configure(command=do_logout)
     # --- THIẾT LẬP TRẠNG THÁI MẶC ĐỊNH KHI MỞ ---
     switch_view("Trang chủ", btn_mainMenu)
 
