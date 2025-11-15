@@ -1114,26 +1114,3 @@ def clear_cart_tree():
     if cart_tree:
         for item in cart_tree.get_children():
             cart_tree.delete(item)
-
-
-
-
-
-    
-
-
-    
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-

@@ -6,6 +6,7 @@ from tkinter import messagebox
 from PIL import Image
 from tkcalendar import DateEntry
 from handlers.persistence_manager import *
+from handlers.persistense_manager_2 import *
 #==========================Cấu hình Màu sắc và Biến Toàn cục==========================
 # --- Cấu hình Màu sắc (Đã chỉnh sửa để dễ quản lý) ---
 SIDEBAR_BG = "#3C8EFA"
@@ -793,9 +794,92 @@ def OpenMainWindow():
 #============================================================================================================================================ 
     # -- 5. Tạo Frame Thống kê Báo cáo ---
 #============================================================================================================================================ 
-    statistics_frame = ctk.CTkFrame(main_content_area)
-    stats_label = ctk.CTkLabel(statistics_frame, text="THỐNG KÊ BÁO CÁO", font=ctk.CTkFont(size=30))
-    stats_label.pack(expand=True)
+    ROOT_BG_COLOR = "#E1F4FD" 
+
+    statistics_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR)
+    statistics_frame.grid_columnconfigure(0, weight=1) # Chỉ 1 cột chính
+    statistics_frame.grid_rowconfigure(0, weight=0) # Hàng 0: Tiêu đề
+    statistics_frame.grid_rowconfigure(1, weight=0) # Hàng 1: Bộ lọc/Điều khiển
+    statistics_frame.grid_rowconfigure(2, weight=1) # Hàng 2: Biểu đồ/Bảng (GIÃN NỞ)
+
+    #========================================================
+    # === HÀNG 0: Tiêu đề Chung ===
+    #========================================================
+    frame_title_stats = ctk.CTkLabel(statistics_frame, 
+                                    text="BẢNG ĐIỀU KHIỂN & BÁO CÁO THỐNG KÊ", 
+                                    font=ctk.CTkFont(size=24, weight="bold"), 
+                                    text_color="#3C8EFA")
+    frame_title_stats.grid(row=0, column=0, padx=20, pady=(15, 10), sticky="w")
+
+
+    # === HÀNG 1: Khu vực Lựa chọn Báo cáo (Control Panel) ===
+    control_panel_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
+    control_panel_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
+    control_panel_frame.grid_columnconfigure((0, 2), weight=0) # Labels
+    control_panel_frame.grid_columnconfigure((1, 3), weight=1) # Entries (giãn nở tốt)
+    control_panel_frame.grid_columnconfigure((4, 6), weight=0) # Labels Từ/Đến
+    control_panel_frame.grid_columnconfigure((5, 7), weight=1) # DateEntries (Giãn nở vừa phải)
+    control_panel_frame.grid_columnconfigure((8, 9), weight=1) # Nút (Sử dụng columnspan)
+
+    DATE_STYLE = {'date_pattern': 'dd/mm/yyyy', 'selectmode': 'day', 'width': 12, 'background': 'white', 'foreground': 'black', 'borderwidth': 1}
+
+    # ----------------------------------------------------
+    # --- HÀNG 0: Loại Báo cáo và Top N (Bộ lọc chính) ---
+    # ----------------------------------------------------
+
+    # 1. Lựa chọn Loại Báo cáo
+    ctk.CTkLabel(control_panel_frame, text="Loại Báo cáo:", font=ctk.CTkFont(size=13)).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+    combo_report_type = ctk.CTkComboBox(control_panel_frame, 
+                                        values=["Top sách được mượn nhiều nhất", 
+                                                "Top độc giả mượn nhiều sách nhất", 
+                                                "Top sách có số lượng tồn nhiều nhất",
+                                                "Top sách được mượn ít nhất", 
+                                                "Top độc giả mượn ít sách nhất", 
+                                                "Top sách có số lượng tồn ít nhất"])
+    combo_report_type.grid(row=0, column=1, padx=(5, 15), pady=10, sticky="ew")
+
+    # 2. Giá trị N
+    ctk.CTkLabel(control_panel_frame, text="Top N:", font=ctk.CTkFont(size=13)).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
+    entry_top_n = ctk.CTkEntry(control_panel_frame, placeholder_text="VD: 5")
+    entry_top_n.grid(row=0, column=3, padx=(5, 15), pady=10, sticky="ew")
+    entry_top_n.insert(0, "10") 
+
+    # ----------------------------------------------------
+    # --- HÀNG 1: Phạm vi Ngày tháng và Nút Thao tác ---
+    # ----------------------------------------------------
+
+    # 3. Lựa chọn Phạm vi Thời gian (DateEntry)
+    ctk.CTkLabel(control_panel_frame, text="Từ Ngày:", font=ctk.CTkFont(size=13)).grid(row=1, column=0, padx=(15, 5), pady=(0, 15), sticky="w")
+    entry_date_from = DateEntry(control_panel_frame, **DATE_STYLE)
+    entry_date_from.grid(row=1, column=1, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+    ctk.CTkLabel(control_panel_frame, text="Đến Ngày:", font=ctk.CTkFont(size=13)).grid(row=1, column=2, padx=(15, 5), pady=(0, 15), sticky="w")
+    entry_date_to = DateEntry(control_panel_frame, **DATE_STYLE)
+    entry_date_to.grid(row=1, column=3, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+
+    # 4. Nút Xem Báo cáo
+    btn_view_report = ctk.CTkButton(control_panel_frame, text="🔍 Xem Báo cáo", fg_color="#3C8EFA", hover_color="#5AA0FF",
+                                    command=lambda: generate_report_and_chart(combo_report_type.get(), entry_top_n.get(), entry_date_from.get(), entry_date_to.get(), display_report_frame))
+    btn_view_report.grid(row=0, column=7, padx=(5, 15), pady=(0, 15), sticky="ew") 
+
+    # 5. Nút Xuất Excel
+    btn_export_excel = ctk.CTkButton(control_panel_frame, text="📄 Xuất Excel", fg_color="#4CAF50", hover_color="#388E3C",
+                                    command=lambda: export_data_to_excel(combo_report_type.get(), entry_top_n.get(), entry_date_from.get(), entry_date_to.get()))
+    btn_export_excel.grid(row=1, column=7, padx=(5, 15), pady=(0, 15), sticky="ew")
+
+    #========================================================
+    # === HÀNG 2: Khu vực Biểu đồ/Bảng dữ liệu (Giãn nở) ===
+    #========================================================
+    display_report_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
+    display_report_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
+
+    # Khu vực này sẽ là nơi bạn nhúng biểu đồ Matplotlib hoặc Treeview kết quả
+    ctk.CTkLabel(display_report_frame, 
+                text="KHU VỰC HIỂN THỊ BIỂU ĐỒ HOẶC BẢNG DỮ LIỆU KẾT QUẢ", 
+                font=ctk.CTkFont(size=16, weight="bold")).pack(expand=True, padx=50, pady=50)
+
+
     content_frames["Thống kê báo cáo"] = statistics_frame # Lưu Frame
 #============================================================================================================================================ 
     # -- 6. Tạo Frame Cài đặt ---
