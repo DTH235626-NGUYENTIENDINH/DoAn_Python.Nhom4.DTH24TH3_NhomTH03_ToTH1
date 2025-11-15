@@ -1,4 +1,5 @@
-﻿CREATE DATABASE QuanLySach
+﻿DROP DATABASE QuanLySach
+CREATE DATABASE QuanLySach
 ON PRIMARY
 (
     NAME = QuanLySach_Data,
@@ -61,23 +62,23 @@ CREATE TABLE DocGia (
 );
 
 CREATE TABLE PhieuMuon (
-    MaMuonTra VARCHAR(10) PRIMARY KEY, -- Đã đổi độ dài thành 10
+    MaPhieuMuon VARCHAR(10) PRIMARY KEY,
     MaDocGia VARCHAR(6) NOT NULL,
-    NgayMuon DATETIME NOT NULL,
-    TongSachMuon INT DEFAULT 0,
-    
+    NgayMuon DATE NOT NULL,	
+	NgayHenTra DATE NOT NULL,
+    TrangThai nvarchar(255),
     -- Ràng buộc 1: Kiểm tra độ dài Mã Muon Tra phải là 10
-    CONSTRAINT CK_PhieuMuon_MaMuonTraLength_10 
-        CHECK (LEN(MaMuonTra) = 10),
+    CONSTRAINT CK_PhieuMuon_MaPhieuMuonLength_10 
+        CHECK (LEN(MaPhieuMuon) = 10),
 
     -- Ràng buộc 2: Kiểm tra cấu trúc Mã Muon Tra (6 Số cho Ngày + 4 Số cho STT)
-    CONSTRAINT CK_PhieuMuon_MaMuonTraStructure_10
+    CONSTRAINT CK_PhieuMuon_MaPhieuMuonStructure_10
         CHECK (
             -- Kiểm tra 6 ký tự đầu (YYMMDD) là số
-            SUBSTRING(MaMuonTra, 1, 6) NOT LIKE '%[^0-9]%' AND
+            SUBSTRING(MaPhieuMuon, 1, 6) NOT LIKE '%[^0-9]%' AND
             
             -- Kiểm tra 4 ký tự cuối (STT) là số
-            SUBSTRING(MaMuonTra, 7, 4) NOT LIKE '%[^0-9]%'
+            SUBSTRING(MaPhieuMuon, 7, 4) NOT LIKE '%[^0-9]%'
         ),
         
     FOREIGN KEY (MaDocGia) REFERENCES DocGia(MaDocGia)
@@ -85,24 +86,22 @@ CREATE TABLE PhieuMuon (
         ON DELETE NO ACTION 
 );
 
-CREATE TABLE ChiTietMuonSach (
-    MaMuonTra VARCHAR(10), -- Đã đổi độ dài thành 10
-    MaSach VARCHAR(7),
-    NgayTraDuKien DATE NOT NULL,
-    NgayTraThucTe DATE,
-    PhiPhat DECIMAL(10, 2) DEFAULT 0.00,
-    TinhTrangSachKhiTra NVARCHAR(255),
-    
-    PRIMARY KEY (MaMuonTra, MaSach), 
-    
-    -- Khóa ngoại phải tham chiếu đến Mã Phiếu Mượn 10 ký tự
-    FOREIGN KEY (MaMuonTra) REFERENCES PhieuMuon(MaMuonTra)
-        ON UPDATE CASCADE 
-        ON DELETE CASCADE, 
-        
-    FOREIGN KEY (MaSach) REFERENCES Sach(MaSach)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION 
+CREATE TABLE ChiTietPhieuMuon (
+    MaPhieuMuon VARCHAR(10) NOT NULL,
+    MaSach VARCHAR(7) NOT NULL,
+    SoLuong INT NOT NULL CHECK (SoLuong > 0),
+    NgayTraThucTe DATE NULL, 
+    TinhTrang NVARCHAR(50) NULL DEFAULT 'N/A',
+    PhiPhat INT NULL DEFAULT 0,
+
+    CONSTRAINT PK_ChiTietPhieuMuon PRIMARY KEY (MaPhieuMuon, MaSach),
+
+    CONSTRAINT FK_ChiTiet_PhieuMuon FOREIGN KEY (MaPhieuMuon)
+        REFERENCES PhieuMuon(MaPhieuMuon)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_ChiTiet_Sach FOREIGN KEY (MaSach)
+        REFERENCES Sach(MaSach)
 );
 
 CREATE TABLE NguoiDungHeThong (
@@ -126,6 +125,26 @@ CREATE TABLE NguoiDungHeThong (
 drop table Sach
 drop table DocGia
 drop table PhieuMuon
-drop table ChiTietMuonSach
+drop table ChiTietPhieuMuon
 
 select * from NguoiDungHeThong
+select * from Sach
+select * from DocGia
+select * from PhieuMuon
+select * from ChiTietPhieuMuon
+
+ALTER TABLE PhieuMuon
+DROP CONSTRAINT FK__PhieuMuon__MaDoc__45BE5BA9;
+
+ALTER TABLE PhieuMuon
+ADD CONSTRAINT FK_PhieuMuon_DocGia_Cascade
+FOREIGN KEY (MaDocGia) REFERENCES DocGia(MaDocGia)
+ON DELETE CASCADE;
+
+ALTER TABLE ChiTietPhieuMuon
+DROP CONSTRAINT FK_ChiTiet_Sach;
+
+ALTER TABLE ChiTietPhieuMuon
+ADD CONSTRAINT FK_ChiTiet_Sach
+FOREIGN KEY (MaSach) REFERENCES Sach(MaSach)
+ON DELETE CASCADE;
