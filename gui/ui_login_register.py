@@ -172,6 +172,20 @@ class App(ctk.CTk):
         self.reg_confirm_entry = ctk.CTkEntry(frame, placeholder_text="Xác nhận mật khẩu", show="*", **entry_kwargs)
         self.reg_confirm_entry.pack(pady=5, padx=30)
 
+        self.reg_show_pass_var = ctk.BooleanVar(value=False)
+
+        show_pass_check = ctk.CTkCheckBox(
+            frame,
+            text="Hiện mật khẩu",
+            variable=self.reg_show_pass_var,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_password_visibility, # Gọi phương thức CỦA CLASS
+            text_color=("#1A1A1A", "white")
+        )
+
+        show_pass_check.pack(pady=(10, 5), padx=40, anchor="w") 
+
         # NÚT ĐĂNG KÝ 
         register_button = ctk.CTkButton(frame, text="Đăng ký", 
                                         width=250, 
@@ -247,6 +261,19 @@ class App(ctk.CTk):
             self.destroy()  # Đóng cửa sổ đăng nhập
         else:
             self.show_message(message, is_error=True)
+
+    def toggle_password_visibility(self):
+
+        if self.reg_show_pass_var.get():  # Trả về True nếu checkbox được tick
+            # Nếu được tick, đặt show="" để hiển thị văn bản
+            self.reg_password_entry.configure(show="")
+            self.reg_confirm_entry.configure(show="")
+        else:  # Trả về False nếu checkbox không được tick
+            # Nếu không tick, đặt show="*" để ẩn văn bản
+            self.reg_password_entry.configure(show="*")
+            self.reg_confirm_entry.configure(show="*")
+    
+    
 
 if __name__ == "__main__":
     app = App()
