@@ -32,7 +32,7 @@ def add_book(book_widget):
             messagebox.showerror("Lỗi", "Số lượng tồn phải là số nguyên.")
             return
     else:
-        SoLuong = 0  # Mặc định số lượng là 0 nếu không nhập
+        SoLuong = 0  # Mặc định 0 
     #Kết nối đến cơ sở dữ liệu
     conn = connect_to_db()
     cursor = conn.cursor()
@@ -46,7 +46,7 @@ def add_book(book_widget):
         messagebox.showinfo("Thành công", "Thêm sách mới thành công!")
         for widget in book_widget.values():
             widget.delete(0, 'end')            
-            load_book_data()  # Tải lại dữ liệu sách trong Treeview
+            load_book_data()  
             load_book_ids_to_combobox()
             
     except pyodbc.IntegrityError:
@@ -83,7 +83,7 @@ def update_book(book_widget):
             messagebox.showerror("Lỗi", "Số lượng tồn phải là số nguyên.")
             return
     else:
-        SoLuong = 0  # Mặc định số lượng là 0 nếu không nhập
+        SoLuong = 0  # Mặc định là 0
     #Kết nối đến cơ sở dữ liệu
     conn = connect_to_db()
     cursor = conn.cursor()
@@ -101,7 +101,7 @@ def update_book(book_widget):
             messagebox.showinfo("Thành công", "Cập nhật thông tin sách thành công!")
             for widget in book_widget.values():
                 widget.delete(0, 'end')            
-            load_book_data()  # Tải lại dữ liệu sách trong Treeview
+            load_book_data()  
             load_book_ids_to_combobox()
     except Exception as e:
         messagebox.showerror("Lỗi", f"Đã xảy ra lỗi khi cập nhật sách: {e}")
@@ -131,10 +131,10 @@ def delete_book(book_widget):
             messagebox.showinfo("Thành công", "Xóa sách thành công!")
             for widget in book_widget.values():
                 widget.delete(0, 'end')            
-            load_book_data()  # Tải lại dữ liệu sách trong Treeview    
+            load_book_data()    
 
-            load_book_ids_to_combobox() # Tải lại ComboBox Sách
-            load_borrow_list() # Tải lại Bảng Phiếu Mượn (vì lịch sử đã thay đổi)
+            load_book_ids_to_combobox() 
+            load_borrow_list() 
             clear_cart_tree()           
     except Exception as e:
         messagebox.showerror("Lỗi", f"Đã xảy ra lỗi khi xóa sách: {e}")
@@ -213,7 +213,7 @@ def load_book_data():
 
 def on_book_select(event):
     global book_entries
-    selected_item = book_treeview.focus() # Lấy dòng đang được chọn
+    selected_item = book_treeview.focus() 
     if not selected_item:
         return   
     # Xóa dữ liệu cũ trong các ô Entry trước
@@ -226,7 +226,7 @@ def on_book_select(event):
     # Điền dữ liệu vào các Entry tương ứng
     for key, value in zip(entry_keys, book_data):
         if key in book_entries:
-            book_entries[key].insert(0, value) # Điền dữ liệu mới
+            book_entries[key].insert(0, value) 
 #dọn textbox
 def clear_book_entries(book_widget):
     for widget in book_widget.values():
@@ -266,8 +266,8 @@ def add_reader(reader_widget):
         messagebox.showinfo("Thành công", "Thêm độc giả mới thành công!")
         for widget in reader_widget.values():
             widget.delete(0, 'end')            
-            load_reader_data()  # Tải lại dữ liệu độc giả
-            load_reader_ids_to_combobox() # Tải lại ComboBox Độc Giả
+            load_reader_data() 
+            load_reader_ids_to_combobox() 
             load_chi_tiet_phieu()
             
             
@@ -312,7 +312,7 @@ def update_reader(reader_widget):
             messagebox.showinfo("Thành công", "Cập nhật thông tin độc giả thành công!")
             for widget in reader_widget.values():
                 widget.delete(0, 'end')            
-            load_reader_data()  # Tải lại dữ liệu độc giả
+            load_reader_data() 
             load_reader_ids_to_combobox()
             load_borrow_list()
     except Exception as e:
@@ -343,8 +343,8 @@ def delete_reader(reader_widget):
             messagebox.showinfo("Thành công", "Xóa độc giả thành công!")
             for widget in reader_widget.values():
                 widget.delete(0, 'end')            
-            load_reader_data()  # Tải lại dữ liệu độc giả
-            load_borrow_list() # Tải lại dữ liệu phiếu mượn
+            load_reader_data() 
+            load_borrow_list() 
             load_reader_ids_to_combobox()
     except Exception as e:
         messagebox.showerror("Lỗi", f"Đã xảy ra lỗi khi xóa độc giả: {e}")
@@ -359,7 +359,6 @@ def search_reader(reader_widget):
         'HoTen': reader_widget['HoTen'].get(),
         'DiaChi': reader_widget['DiaChi'].get(),
         'SoDienThoai': reader_widget['SoDienThoai'].get(),
-        #'NgaySinh': reader_widget['NgaySinh'].get_date(),
     }
 
     searh_query = "SELECT MaDocGia, HoTen, DiaChi, SoDienThoai, NgaySinh FROM DocGia WHERE 1=1"
@@ -420,7 +419,7 @@ def load_reader_data():
             reader_treeview.delete(item)
         # Thêm dữ liệu mới vào Treeview
         for row in rows:
-            # 1. Chuyển row (tuple) thành list để xử lý
+            # 1. Chuyển row (tuple) thành list 
             data_list = list(row)
             
             # 2. Xử lý cột Ngày sinh (vị trí 4)
@@ -610,7 +609,7 @@ def load_borrow_list():
     conn = connect_to_db()
     cursor = conn.cursor()
     try:
-        # 3. Câu SQL (Đã đơn giản hóa, không tính SUM)
+        # 3. Câu SQL
         sql_query = """
             SELECT 
                 pm.MaPhieuMuon, 
@@ -818,7 +817,7 @@ def save_borrow_ticket():
         messagebox.showinfo("Thành công", f"Đã lưu thành công Phiếu Mượn {ma_phieu}!")
         
         # 6. Làm sạch form và tải lại
-        clear_borrow_form() # Sẽ tự động gọi load_borrow_list()
+        clear_borrow_form() 
         load_book_data()
 
     except pyodbc.IntegrityError as e:
@@ -1031,7 +1030,7 @@ def update_book_return():
         # 6. Tải lại cả hai bảng
         load_borrow_list()
         load_chi_tiet_phieu(ma_phieu)
-        load_book_ids_to_combobox() # Tải lại ComboBox Sách
+        load_book_ids_to_combobox() 
         load_book_data()
 
     except Exception as e:
