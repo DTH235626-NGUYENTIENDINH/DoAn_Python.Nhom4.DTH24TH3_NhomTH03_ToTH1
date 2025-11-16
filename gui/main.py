@@ -3,58 +3,55 @@ import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
 from tkinter import messagebox
-from PIL import Image
+from PIL import Image, ImageTk, ImageFilter
 from tkcalendar import DateEntry
 from handlers.persistence_manager import *
 from handlers.persistense_manager_2 import *
 #==========================Cấu hình Màu sắc và Biến Toàn cục==========================
-# --- Cấu hình Màu sắc (Đã chỉnh sửa để dễ quản lý) ---
-SIDEBAR_BG = "#3C8EFA"
-NORMAL_BUTTON_FG = "#3C8EFA"
+# --- Cấu hình Màu sắc ---
+SIDEBAR_BG = "#244D81"
+NORMAL_BUTTON_FG = "#244D81"
 ACTIVE_COLOR = "#5AA0FF" 
-HOVER_COLOR = "#5AA0FF" # Giữ nguyên hover_color cho nút bình thường
+HOVER_COLOR = "#5AA0FF"
 LOGOUT_COLOR = "#FA3C3C"
 
 # --- Khai báo Biến Toàn cục ---
 current_active_button = None
 content_frames = {}
-root = None # Khai báo root ở phạm vi toàn cục hoặc xử lý bên trong hàm
+root = None
 book_widget = {}
 readeer_widget = {}
-
+welcome_label = None
 #==========================Hàm xử lý đăng xuất=================================
 def do_logout():
     if messagebox.askyesno("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất không?"):
-        root.destroy()  # Đóng cửa sổ chính
+        root.destroy()
 
 #==========================Hàm quản lý chuyển đổi giao diện======================
 def switch_view(view_name, new_button):
-    global current_active_button
-    
-    # 1. Quản lý trạng thái Active của nút (Đổi màu)
-    if current_active_button:
-        # Khôi phục nút active trước đó về màu nền
-        current_active_button.configure(fg_color=NORMAL_BUTTON_FG)
-        
-    # 2. Thiết lập màu Active cho nút mới được click
+    global current_active_button, welcome_label
+    try:
+        if current_active_button:
+            current_active_button.configure(fg_color=NORMAL_BUTTON_FG) 
+    except tk.TclError:
+        current_active_button = None   
     new_button.configure(fg_color=ACTIVE_COLOR)
-    current_active_button = new_button
-    
-    # 3. Ẩn tất cả các Frame nội dung
+    current_active_button = new_button   
     for frame in content_frames.values():
-        frame.grid_forget()
-
-    # 4. Hiển thị Frame của giao diện được chọn
+        try:
+            frame.grid_forget()
+        except tk.TclError:
+            pass
     if view_name in content_frames:
-        # Đặt Frame vào vị trí của main_content_area
+        if view_name == "Trang chủ":
+            if welcome_label and welcome_label.winfo_exists():
+                new_display_name = get_user_display_name() 
+                welcome_label.configure(text=f"Chào mừng {new_display_name} \nđã trở lại!")
         content_frames[view_name].grid(row=0, column=0, sticky="nsew")
-        print(f"Hiển thị giao diện: {view_name}")
-    else:
-        print(f"Lỗi: Không tìm thấy Frame cho giao diện '{view_name}'")
 
 #==========================Hàm giao diện======================
 def OpenMainWindow():
-    global root, current_active_button, content_frames, book_widget
+    global root, current_active_button, content_frames, book_widget, welcome_label
     
     #Tạo cửa sổ chính
     root = ctk.CTk()
@@ -64,9 +61,9 @@ def OpenMainWindow():
     root.configure(fg_color="#E1F4FD")
     
     # --- Cấu hình Grid Tổng thể cho root ---
-    root.grid_columnconfigure(0, weight=0) # Cột 0: Sidebar (cố định)
-    root.grid_columnconfigure(1, weight=1) # Cột 1: Nội dung chính (giãn nở)
-    root.grid_rowconfigure(0, weight=1)    # Hàng 0: Giãn nở
+    root.grid_columnconfigure(0, weight=0) 
+    root.grid_columnconfigure(1, weight=1) 
+    root.grid_rowconfigure(0, weight=1)    
     
     # === Sidebar Frame (Dùng CTkScrollableFrame) ===
     left_frame = ctk.CTkScrollableFrame(
@@ -83,8 +80,6 @@ def OpenMainWindow():
     left_frame.grid_rowconfigure(7, weight=1) 
     
     #===========================Sidebar control==========================
-    # (Phần Logo và Tiêu đề giữ nguyên, đã chuyển sang dùng grid)
-    # ... code logo và tên ứng dụng ...
     try:
         logo_picture = ctk.CTkImage(Image.open("Picture/BookLogo.png"), size=(40, 40))
         logo_label = ctk.CTkLabel(left_frame, image=logo_picture, text="")
@@ -93,18 +88,18 @@ def OpenMainWindow():
         logo_label = ctk.CTkLabel(left_frame, text="[Logo]", font=ctk.CTkFont(size=20, weight="bold"), text_color="white")
         logo_label.grid(row=0, column=0, pady=(20, 10))
 
-    app_logo = ctk.CTkLabel(left_frame, text="Quản lý sách", font=ctk.CTkFont(size=20, weight="bold"), fg_color=SIDEBAR_BG, text_color="white")
+    app_logo = ctk.CTkLabel(left_frame, text="QUẢN LÝ SÁCH", font=ctk.CTkFont(size=20, weight="bold"), fg_color=SIDEBAR_BG, text_color="white")
     app_logo.grid(row=1, column=0, pady=(0, 40))
 
-    # Nút giao diện welcome (Row 2)
+    # Nút giao diện welcome 
     btn_mainMenu = ctk.CTkButton(left_frame, text="🏠 Trang chủ", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
     btn_mainMenu.grid(row=2, column=0, pady=(50, 20), padx=20, sticky="ew")
 
-    # Nút quản lý sách (Row 3)
+    # Nút quản lý sách 
     btn_bookManagement = ctk.CTkButton(left_frame, text="📘 Quản lý sách", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
     btn_bookManagement.grid(row=3, column=0, pady=(0, 20), padx=20, sticky="ew")
     
-    # ... Các nút khác (giữ nguyên cấu trúc) ...
+    # ... Các nút khác ...
     btn_readerManagement = ctk.CTkButton(left_frame, text="👤 Quản lý độc giả", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
     btn_readerManagement.grid(row=4, column=0, pady=(0, 20), padx=20, sticky="ew")
     btn_borrowReturnManagement = ctk.CTkButton(left_frame, text="📚 Mượn trả sách", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
@@ -112,41 +107,102 @@ def OpenMainWindow():
     btn_statisticsReports = ctk.CTkButton(left_frame, text="📊 Thống kê báo cáo", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
     btn_statisticsReports.grid(row=6, column=0, pady=(0, 20), padx=20, sticky="ew")
     
-    # Nút cài đặt (Row 8)
+    # Nút cài đặt 
     btn_settings = ctk.CTkButton(left_frame, text="⚙️ Cài đặt", fg_color=NORMAL_BUTTON_FG, hover_color=HOVER_COLOR, font=ctk.CTkFont(size=16, weight="bold"))
     btn_settings.grid(row=8, column=0, pady=(100, 10), padx=20, sticky="ew")
     
-    # Nút Đăng xuất (Row 9)
+    # Nút Đăng xuất
     btn_logout = ctk.CTkButton(left_frame, text="⬅ Đăng xuất", fg_color=LOGOUT_COLOR, hover_color="#CC3030", font=ctk.CTkFont(size=16, weight="bold"))
     btn_logout.grid(row=9, column=0, pady=(10, 20), padx=20, sticky="ew")
 
 
-#===========================Khu vực quản lý Frame Nội dung (Column 1)==========================
+#===========================Khu vực quản lý Frame Nội dung ==========================
     # Container chính cho Nội dung
     main_content_area = ctk.CTkFrame(root, fg_color="transparent")
     main_content_area.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
     main_content_area.grid_columnconfigure(0, weight=1)
     main_content_area.grid_rowconfigure(0, weight=1)
 #============================================================================================================================================ 
-    # --- 1. Tạo Frame Trang chủ (Welcome) ---
+    # --- 1. Tạo Frame Trang chủ ---
 #============================================================================================================================================    
-    hone_frame = ctk.CTkFrame(main_content_area)
-    welcome_label = ctk.CTkLabel(hone_frame, text="CHÀO MỪNG ĐẾN VỚI PHẦN MỀM QUẢN LÝ SÁCH", font=ctk.CTkFont(size=30))
-    welcome_label.pack(expand=True)
-    content_frames["Trang chủ"] = hone_frame # Lưu Frame
+    ROOT_BG_COLOR = "#E1F4FD"
+    home_frame = ctk.CTkFrame(main_content_area, fg_color="transparent") 
+    home_frame.grid_columnconfigure(0, weight=1)
+    home_frame.grid_rowconfigure(0, weight=1)
+
+    # === Chèn Hình ảnh Nền Lớn ===
+    image_path = "Picture/thuvien.jpg"
+
+    # Tải hình ảnh bằng PIL
+    try:
+        pil_image = Image.open(image_path)       
+        pil_image = pil_image.filter(ImageFilter.GaussianBlur(radius=5))
+        
+        # 2. Resize hình ảnh
+        image_width = 800 
+        image_height = 500
+        pil_image = pil_image.resize((image_width, image_height), Image.Resampling.LANCZOS)
+        
+        ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(image_width, image_height))
+        
+        image_label = ctk.CTkLabel(home_frame, image=ctk_image, text="")
+        image_label.grid(row=0, column=0, sticky="nsew")
+
+        overlay_frame = ctk.CTkFrame(image_label, fg_color=SIDEBAR_BG) 
+        overlay_frame.place(relx=0.5, rely=0.5, anchor="center") 
+        overlay_frame.grid_columnconfigure(0, weight=1)
+
+        # Tiêu đề Chào mừng
+        user_name_to_display = get_user_display_name()
+        welcome_text = f"Chào mừng {user_name_to_display} \nđã trở lại!"
+        
+        welcome_label = ctk.CTkLabel(overlay_frame, 
+                                     text=welcome_text, 
+                                     font=ctk.CTkFont(size=40, weight="bold"),
+                                     text_color="white", 
+                                     wraplength=700)
+        welcome_label.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+
+        # Thêm một dòng giới thiệu nhỏ
+        intro_label = ctk.CTkLabel(overlay_frame, 
+                                   text="Ấn bắt đầu để có một ngày làm việc thật chăm chỉ :3  ",
+                                   font=ctk.CTkFont(size=20, slant="italic"),
+                                   text_color="white",
+                                   wraplength=600)
+        intro_label.grid(row=1, column=0, padx=20, pady=5, sticky="nsew")
+
+        start_button = ctk.CTkButton(
+            intro_label,
+            text="BẮT ĐẦU",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            fg_color="#3C8EFA",
+            hover_color="#5AA0FF",
+            corner_radius=10,           
+            command=lambda: switch_view("Quản lý sách", btn_bookManagement) 
+        )
+        start_button.grid(row=2, column=0, pady=(20, 10), padx=50)
+
+    except FileNotFoundError:
+        print(f"Lỗi: Không tìm thấy hình ảnh tại '{image_path}'. Vui lòng kiểm tra đường dẫn.")
+        # Hiển thị một Frame trống hoặc thông báo lỗi nếu không tìm thấy hình ảnh
+        no_image_frame = ctk.CTkFrame(home_frame, fg_color="#244C8124")
+        no_image_frame.grid(row=0, column=0, sticky="nsew")
+        ctk.CTkLabel(no_image_frame, text="Frame Trang Chủ", font=ctk.CTkFont(size=24, weight="bold")).pack(pady=50)
+        ctk.CTkLabel(no_image_frame, text="Hình ảnh không tìm thấy!", text_color="red").pack()
+    content_frames["Trang chủ"] = home_frame
 #============================================================================================================================================ 
     # --- 2. Tạo Frame Quản lý Sách ---
 #============================================================================================================================================    
-    ROOT_BG_COLOR = "#E1F4FD" # Lấy màu nền root bạn đã thiết lập
+    ROOT_BG_COLOR = "#E1F4FD" 
 
     book_management_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR) 
 
     # Cấu hình grid cho book_management_frame (2 cột, 3 hàng)
-    book_management_frame.grid_columnconfigure(0, weight=3) # Cột 0: Nhập liệu/List (Rộng hơn)
-    book_management_frame.grid_columnconfigure(1, weight=1) # Cột 1: Nút (Hẹp hơn)
-    book_management_frame.grid_rowconfigure(0, weight=0) # Hàng 0: Tiêu đề (Không giãn nở)
-    book_management_frame.grid_rowconfigure(1, weight=0) # Hàng 1: Form & Nút (Không giãn nở)
-    book_management_frame.grid_rowconfigure(2, weight=1) # Hàng 2: List (GIÃN NỞ)
+    book_management_frame.grid_columnconfigure(0, weight=3) 
+    book_management_frame.grid_columnconfigure(1, weight=1)
+    book_management_frame.grid_rowconfigure(0, weight=0)
+    book_management_frame.grid_rowconfigure(1, weight=0) 
+    book_management_frame.grid_rowconfigure(2, weight=1) 
 
     #========================================================
     # === HÀNG 0: Tiêu đề Chung ===
@@ -166,10 +222,10 @@ def OpenMainWindow():
     input_form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
 
     # Cấu hình grid cho Form bên trong (4 cột)
-    input_form_frame.grid_columnconfigure(0, weight=0) # Cột Label 1 (Không giãn nở)
-    input_form_frame.grid_columnconfigure(1, weight=1) # Cột Entry 1 (Giãn nở)
-    input_form_frame.grid_columnconfigure(2, weight=0) # Cột Label 2 (Không giãn nở)
-    input_form_frame.grid_columnconfigure(3, weight=1) # Cột Entry 2 (Giãn nở)
+    input_form_frame.grid_columnconfigure(0, weight=0) 
+    input_form_frame.grid_columnconfigure(1, weight=1) 
+    input_form_frame.grid_columnconfigure(2, weight=0) 
+    input_form_frame.grid_columnconfigure(3, weight=1)
 
     # Row 0: Mã sách và Tên sách
     # Mã sách (Cột 0 & 1)
@@ -212,7 +268,7 @@ def OpenMainWindow():
     entry_so_luong.grid(row=2, column=3, padx=(0, 20), pady=10, sticky="ew")
 
 
-    # Row 3: Thể loại (Chiếm toàn bộ chiều ngang)
+    # Row 3: Thể loại 
     the_loai_label = ctk.CTkLabel(input_form_frame, text="Thể loại*:", font=ctk.CTkFont(size=13))
     the_loai_label.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
     entry_the_loai = ctk.CTkEntry(input_form_frame, placeholder_text="Loại sách (VD: Khoa học, Tiểu thuyết)")
@@ -234,7 +290,7 @@ def OpenMainWindow():
     button_area_frame = ctk.CTkFrame(book_management_frame, fg_color="#F0F0F0", corner_radius=10)
     button_area_frame.grid(row=1, column=1, sticky="nsew", padx=(0, 10), pady=10)
 
-    # Cấu hình grid cho khu vực nút (để các nút xếp chồng lên nhau và giãn nở)
+    # Cấu hình grid cho khu vực nút 
     button_area_frame.grid_columnconfigure(0, weight=1)
 
     # Nút Thêm
@@ -292,11 +348,11 @@ def OpenMainWindow():
 
     register_book_treeview(tree_view)
     register_book_entries(book_widget)
-    load_book_data()  # Tải dữ liệu sách vào Treeview khi khởi tạo giao diện
+    load_book_data()  # Tải dữ liệu sách
     tree_view.bind("<<TreeviewSelect>>", on_book_select)
     content_frames["Quản lý sách"] = book_management_frame # Lưu Frame
     # ========================================================
-    # ! BỔ SUNG: Tạo Context Menu (Menu chuột phải)
+    # Tạo Context Menu (Menu chuột phải)
     # ========================================================   
     # 1. Tạo một Menu widget
     context_menu = tk.Menu(root, 
@@ -331,11 +387,11 @@ def OpenMainWindow():
     reader_management_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR)
 
     #Cấu hinh grid cho reader_management_frame (2 cột, 3 hàng)
-    reader_management_frame.grid_columnconfigure(0, weight=3) # Cột 0
-    reader_management_frame.grid_columnconfigure(1, weight=1) # Cột 1
-    reader_management_frame.grid_rowconfigure(0, weight=0) # Hàng 0
-    reader_management_frame.grid_rowconfigure(1, weight=0) # Hàng 1
-    reader_management_frame.grid_rowconfigure(2, weight=1) # Hàng 2
+    reader_management_frame.grid_columnconfigure(0, weight=3) 
+    reader_management_frame.grid_columnconfigure(1, weight=1)
+    reader_management_frame.grid_rowconfigure(0, weight=0) 
+    reader_management_frame.grid_rowconfigure(1, weight=0) 
+    reader_management_frame.grid_rowconfigure(2, weight=1) 
     # Tiêu đề
     reader_frame_title = ctk.CTkLabel(reader_management_frame, 
                             text="QUẢN LÝ THÔNG TIN ĐỘC GIẢ", 
@@ -348,10 +404,10 @@ def OpenMainWindow():
     intput_reader_form_frame = ctk.CTkFrame(reader_management_frame, fg_color="#FFFFFF", corner_radius=10)
     intput_reader_form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
     # cấu hình grid cho form bên trong (4 cột)
-    intput_reader_form_frame .grid_columnconfigure(0, weight=0) # Cột Label 1 (Không giãn nở)
-    intput_reader_form_frame .grid_columnconfigure(1, weight=1) # Cột Entry 1 (Giãn nở)
-    intput_reader_form_frame .grid_columnconfigure(2, weight=0) # Cột Label 2 (Không giãn nở)
-    intput_reader_form_frame .grid_columnconfigure(3, weight=1) # Cột Entry 2 (Giãn nở)
+    intput_reader_form_frame .grid_columnconfigure(0, weight=0) 
+    intput_reader_form_frame .grid_columnconfigure(1, weight=1) 
+    intput_reader_form_frame .grid_columnconfigure(2, weight=0) 
+    intput_reader_form_frame .grid_columnconfigure(3, weight=1) 
     # Mã độc giả 
     ma_doc_gia_label = ctk.CTkLabel(intput_reader_form_frame , text="Mã độc giả (7 Ký tự)*:", font=ctk.CTkFont(size=13))
     ma_doc_gia_label.grid(row=0, column=0, padx=(20, 10), pady=10, sticky="w")
@@ -391,7 +447,7 @@ def OpenMainWindow():
     # Nút Thao tác
     reader_button_area_frame = ctk.CTkFrame(reader_management_frame, fg_color="#F0F0F0", corner_radius=10)
     reader_button_area_frame.grid(row=1, column=1, sticky="nsew", padx=(0, 10), pady=10)
-    # Cấu hình grid cho khu vực nút (để các nút xếp chồng lên nhau và giãn nở)
+    # Cấu hình grid cho khu vực nút 
     reader_button_area_frame.grid_columnconfigure(0, weight=1)
     # Nút Thêm
     btn_add_reader = ctk.CTkButton(reader_button_area_frame, 
@@ -422,7 +478,7 @@ def OpenMainWindow():
                             command=lambda: search_reader(readeer_widget))
     btn_search_reader.grid(row=3, column=0, pady=(10, 20), padx=20, sticky="ew")
     
-    # Khu vực List/Bảng (Giãn nở)
+    # Khu vực List/Bảng 
     reader_list_area_frame = ctk.CTkFrame(reader_management_frame, fg_color="#FFFFFF", corner_radius=10)
     # Đặt Frame list chiếm cả 2 cột
     reader_list_area_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
@@ -441,10 +497,11 @@ def OpenMainWindow():
     reader_scrollbar.pack(side="right", fill="y", pady=(0, 20))
     register_reader_treeview(reader_tree_view)
     register_reader_entries(readeer_widget)
-    load_reader_data()  # Tải dữ liệu độc giả vào Treeview khi khởi tạo giao diện
+    load_reader_data()  # Tải dữ liệu độc giả
     reader_tree_view.bind("<<TreeviewSelect>>", on_reader_select)
     content_frames["Quản lý độc giả"] = reader_management_frame # Lưu Frame
-# bổ sung: Tạo Context Menu (Menu chuột phải) cho độc giả
+
+    #Tạo Context Menu (Menu chuột phải) cho độc giả
     # 1. Tạo một Menu widget
     reader_context_menu = tk.Menu(root, 
                            tearoff=0,
@@ -518,7 +575,7 @@ def OpenMainWindow():
     ma_doc_gia_label_br.grid(row=1, column=2, padx=(20, 10), pady=10, sticky="w")
     doc_gia_options = ["Chọn mã DG"] 
     entry_ma_doc_gia_br = ctk.CTkComboBox(input_borrow_frame, values=doc_gia_options, 
-                                          command=on_reader_id_select) # Đã thêm command
+                                          command=on_reader_id_select)
     entry_ma_doc_gia_br.set(doc_gia_options[0]) 
     entry_ma_doc_gia_br.grid(row=1, column=3, padx=(0, 20), pady=10, sticky="ew") 
     #Tên độc giả
@@ -543,7 +600,7 @@ def OpenMainWindow():
                                    text="🔍 TRA CỨU PHIẾU", 
                                    fg_color="#3C8EFA", 
                                    hover_color="#5AA0FF",
-                                   command=search_borrow_ticket) #! THÊM COMMAND
+                                   command=search_borrow_ticket) 
     btn_search_br.grid(row=4, column=0, columnspan=2, pady=(15, 10), padx=20, sticky="ew")
 
     # Nút HỦY
@@ -551,7 +608,7 @@ def OpenMainWindow():
                                 text="❌ HỦY/LÀM MỚI", 
                                 fg_color="#777777", 
                                 hover_color="#555555",
-                                command=clear_borrow_form) #! THÊM COMMAND
+                                command=clear_borrow_form)
     btn_cancel.grid(row=4, column=2, columnspan=2, pady=(15, 10), padx=20, sticky="ew")
 
     #========================================================
@@ -572,21 +629,21 @@ def OpenMainWindow():
                                      text="➕ THÊM SÁCH", 
                                      fg_color="#4CAF50", 
                                      hover_color="#388E3C",
-                                     command=add_book_to_cart) #! THÊM COMMAND
+                                     command=add_book_to_cart) 
     btn_add_detail.grid(row=1, column=0, pady=10, padx=5, sticky="ew")
 
     btn_delete_detail = ctk.CTkButton(borrow_buttons_frame, 
                                         text="➖ XÓA SÁCH", 
                                         fg_color="#F44336", 
                                         hover_color="#D32F2F",
-                                        command=remove_book_from_cart) #! THÊM COMMAND
+                                        command=remove_book_from_cart) 
     btn_delete_detail.grid(row=2, column=0, pady=10, padx=5, sticky="ew")
     
     btn_save_borrow = ctk.CTkButton(borrow_buttons_frame, 
                                       text="💾 LƯU PHIẾU MƯỢN", 
                                       fg_color="#3C8EFA", 
                                       hover_color="#5AA0FF",
-                                      command=save_borrow_ticket) #! THÊM COMMAND
+                                      command=save_borrow_ticket) 
     btn_save_borrow.grid(row=3, column=0, pady=(10, 0), padx=5, sticky="ew")
 
     # --- Nhóm nút TRẢ SÁCH ---
@@ -600,7 +657,7 @@ def OpenMainWindow():
                                        text="⬆️ CẬP NHẬT TRẢ", 
                                        fg_color="#FF4500", 
                                        hover_color="#CC3000",
-                                       command=update_book_return) #! THÊM COMMAND
+                                       command=update_book_return)
     btn_update_return.grid(row=1, column=0, pady=10, padx=5, sticky="ew")
 
     #========================================================
@@ -622,7 +679,7 @@ def OpenMainWindow():
     ma_sach_label_br.grid(row=1, column=0, padx=(20, 10), pady=(20, 10), sticky="w")
     sach_options = ["Chọn mã sách"]
     entry_ma_sach_br = ctk.CTkComboBox(tab_muon, values=sach_options, 
-                                     command=on_book_id_select) # Đã thêm command
+                                     command=on_book_id_select)
     entry_ma_sach_br.set(sach_options[0])
     entry_ma_sach_br.grid(row=1, column=1, padx=(0, 20), pady=(20, 10), sticky="ew")
     
@@ -671,9 +728,9 @@ def OpenMainWindow():
     list_area_br = ctk.CTkFrame(borrow_return_frame, fg_color="#FFFFFF", corner_radius=10)
     list_area_br.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=10, pady=(0, 10))
     # Cấu hình grid cho list_area_br
-    list_area_br.grid_columnconfigure(0, weight=1) # Cột 0 cho Treeview Phiếu
-    list_area_br.grid_columnconfigure(1, weight=1) # Cột 1 cho Treeview Chi Tiết
-    list_area_br.grid_rowconfigure(1, weight=1) # Hàng 1 cho 2 Treeview
+    list_area_br.grid_columnconfigure(0, weight=1) 
+    list_area_br.grid_columnconfigure(1, weight=1)
+    list_area_br.grid_rowconfigure(1, weight=1) 
     
     list_title_br = ctk.CTkLabel(list_area_br, 
                                    text="DANH SÁCH PHIẾU VÀ CHI TIẾT", 
@@ -683,15 +740,15 @@ def OpenMainWindow():
     # --- Container cho 2 bảng ---
     list_container = ctk.CTkFrame(list_area_br, fg_color="transparent")
     list_container.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
-    list_container.grid_columnconfigure(0, weight=1) # Bảng Phiếu Mượn
-    list_container.grid_columnconfigure(1, weight=1) # Bảng Chi Tiết
-    list_container.grid_rowconfigure(0, weight=1) # Hàng cho 2 frame
+    list_container.grid_columnconfigure(0, weight=1)
+    list_container.grid_columnconfigure(1, weight=1) 
+    list_container.grid_rowconfigure(0, weight=1) 
 
     # --- Bảng 1: Danh sách Phiếu Mượn (Master) ---
     phieu_muon_frame = ctk.CTkFrame(list_container, fg_color="transparent")
     phieu_muon_frame.grid(row=0, column=0, sticky="nsew", padx=(10,5), pady=(0,10))
     
-    #! THÊM CẤU HÌNH GRID CHO SCROLLBAR
+    # THÊM CẤU HÌNH GRID CHO SCROLLBAR
     phieu_muon_frame.grid_rowconfigure(1, weight=1)
     phieu_muon_frame.grid_columnconfigure(0, weight=1)
     
@@ -711,12 +768,12 @@ def OpenMainWindow():
         phieu_muon_treeview.heading(col_id, text=text)
         phieu_muon_treeview.column(col_id, width=width, anchor=anchor)
     
-    #! THÊM SCROLLBAR NGANG VÀ DỌC
+    # THÊM SCROLLBAR NGANG VÀ DỌC
     pm_scrollbar_y = ctk.CTkScrollbar(phieu_muon_frame, orientation="vertical", command=phieu_muon_treeview.yview, width= 13)
     pm_scrollbar_x = ctk.CTkScrollbar(phieu_muon_frame, orientation="horizontal", command=phieu_muon_treeview.xview, height= 13)
     phieu_muon_treeview.configure(yscrollcommand=pm_scrollbar_y.set, xscrollcommand=pm_scrollbar_x.set)
 
-    #! ĐẶT VÀO GRID
+    # ĐẶT VÀO GRID
     phieu_muon_treeview.grid(row=1, column=0, sticky="nsew")
     pm_scrollbar_y.grid(row=1, column=1, sticky="ns")
     pm_scrollbar_x.grid(row=2, column=0, sticky="ew") # Ngang
@@ -745,12 +802,12 @@ def OpenMainWindow():
         chi_tiet_treeview.heading(col_id, text=text)
         chi_tiet_treeview.column(col_id, width=width, anchor=anchor)
     
-    #! THÊM SCROLLBAR NGANG VÀ DỌC
+    # THÊM SCROLLBAR NGANG VÀ DỌC
     ct_scrollbar_y = ctk.CTkScrollbar(chi_tiet_frame, orientation="vertical", command=chi_tiet_treeview.yview, width= 13)
     ct_scrollbar_x = ctk.CTkScrollbar(chi_tiet_frame, orientation="horizontal", command=chi_tiet_treeview.xview, height= 13)
     chi_tiet_treeview.configure(yscrollcommand=ct_scrollbar_y.set, xscrollcommand=ct_scrollbar_x.set)
 
-    #! ĐẶT VÀO GRID
+    # ĐẶT VÀO GRID
     chi_tiet_treeview.grid(row=1, column=0, sticky="nsew")
     ct_scrollbar_y.grid(row=1, column=1, sticky="ns")
     ct_scrollbar_x.grid(row=2, column=0, sticky="ew") # Ngang
@@ -790,7 +847,7 @@ def OpenMainWindow():
     load_book_ids_to_combobox()
     load_borrow_list() 
     
-    #! BỔ SUNG: Gán sự kiện click cho 2 Treeview
+    # Gán sự kiện click cho 2 Treeview
     phieu_muon_treeview.bind("<<TreeviewSelect>>", on_phieu_muon_select)
     chi_tiet_treeview.bind("<<TreeviewSelect>>", on_chi_tiet_select)
     
@@ -802,10 +859,10 @@ def OpenMainWindow():
     ROOT_BG_COLOR = "#E1F4FD" 
 
     statistics_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR)
-    statistics_frame.grid_columnconfigure(0, weight=1) # Chỉ 1 cột chính
-    statistics_frame.grid_rowconfigure(0, weight=0) # Hàng 0: Tiêu đề
-    statistics_frame.grid_rowconfigure(1, weight=0) # Hàng 1: Bộ lọc/Điều khiển
-    statistics_frame.grid_rowconfigure(2, weight=1) # Hàng 2: Biểu đồ/Bảng (GIÃN NỞ)
+    statistics_frame.grid_columnconfigure(0, weight=1)
+    statistics_frame.grid_rowconfigure(0, weight=0) 
+    statistics_frame.grid_rowconfigure(1, weight=0) 
+    statistics_frame.grid_rowconfigure(2, weight=1)
 
     #========================================================
     # === HÀNG 0: Tiêu đề Chung ===
@@ -820,11 +877,11 @@ def OpenMainWindow():
     # === HÀNG 1: Khu vực Lựa chọn Báo cáo (Control Panel) ===
     control_panel_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
     control_panel_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
-    control_panel_frame.grid_columnconfigure((0, 2), weight=0) # Labels
-    control_panel_frame.grid_columnconfigure((1, 3), weight=1) # Entries (giãn nở tốt)
-    control_panel_frame.grid_columnconfigure((4, 6), weight=0) # Labels Từ/Đến
-    control_panel_frame.grid_columnconfigure((5, 7), weight=1) # DateEntries (Giãn nở vừa phải)
-    control_panel_frame.grid_columnconfigure((8, 9), weight=1) # Nút (Sử dụng columnspan)
+    control_panel_frame.grid_columnconfigure((0, 2), weight=0) 
+    control_panel_frame.grid_columnconfigure((1, 3), weight=1) 
+    control_panel_frame.grid_columnconfigure((4, 6), weight=0) 
+    control_panel_frame.grid_columnconfigure((5, 7), weight=1) 
+    control_panel_frame.grid_columnconfigure((8, 9), weight=1) 
 
     DATE_STYLE = {'date_pattern': 'dd/mm/yyyy', 'selectmode': 'day', 'width': 12, 'background': 'white', 'foreground': 'black', 'borderwidth': 1}
 
@@ -872,6 +929,9 @@ def OpenMainWindow():
     btn_export_excel = ctk.CTkButton(control_panel_frame, text="📄 Xuất Excel", fg_color="#4CAF50", hover_color="#388E3C",
                                     command=lambda: export_data_to_excel(combo_report_type.get(), entry_top_n.get(), entry_date_from.get(), entry_date_to.get()))
     btn_export_excel.grid(row=1, column=7, padx=(5, 15), pady=(0, 15), sticky="ew")
+    btn_open_folder = ctk.CTkButton(control_panel_frame, text="📂 Mở Thư mục Báo cáo", fg_color="#FAB73C", hover_color="#FAC86B",
+                                command=open_export_folder)
+    btn_open_folder.grid(row=0, column=8, padx=(5, 15), pady=(0, 15), sticky="ew")
 
     #========================================================
     # === HÀNG 2: Khu vực Biểu đồ/Bảng dữ liệu (Giãn nở) ===
@@ -879,7 +939,7 @@ def OpenMainWindow():
     display_report_frame = ctk.CTkFrame(statistics_frame, fg_color="#FFFFFF", corner_radius=10)
     display_report_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
 
-    # Khu vực này sẽ là nơi bạn nhúng biểu đồ Matplotlib hoặc Treeview kết quả
+    # kết quả
     ctk.CTkLabel(display_report_frame, 
                 text="KHU VỰC HIỂN THỊ BIỂU ĐỒ HOẶC BẢNG DỮ LIỆU KẾT QUẢ", 
                 font=ctk.CTkFont(size=16, weight="bold")).pack(expand=True, padx=50, pady=50)
@@ -889,9 +949,181 @@ def OpenMainWindow():
 #============================================================================================================================================ 
     # -- 6. Tạo Frame Cài đặt ---
 #============================================================================================================================================     
-    settings_frame = ctk.CTkFrame(main_content_area)
-    settings_label = ctk.CTkLabel(settings_frame, text="CÀI ĐẶT ỨNG DỤNG", font=ctk.CTkFont(size=30))
-    settings_label.pack(expand=True)
+    ROOT_BG_COLOR = "#E1F4FD" 
+    settings_frame = ctk.CTkFrame(main_content_area, fg_color=ROOT_BG_COLOR)
+    
+    settings_frame.grid_columnconfigure(0, weight=1) 
+    settings_frame.grid_rowconfigure(2, weight=1) # Hàng 2 Giãn nở (dành cho Tabview)
+
+    # === HÀNG 0: Tiêu đề Chung ===
+    frame_title_settings = ctk.CTkLabel(settings_frame, 
+                                        text="QUẢN LÝ THÔNG TIN TÀI KHOẢN", 
+                                        font=ctk.CTkFont(size=24, weight="bold"), 
+                                        text_color="#3C8EFA")
+    frame_title_settings.grid(row=0, column=0, padx=20, pady=(15, 25), sticky="w")
+
+    """
+    # === HÀNG 1: Nút Lưu Cài đặt Chung (Giữ lại nút áp dụng) ===
+    btn_save_settings = ctk.CTkButton(settings_frame, 
+                                      text="💾 Áp dụng & Lưu Thay đổi", 
+                                      fg_color="#3C8EFA", 
+                                      hover_color="#5AA0FF",
+                                      command=lambda: print("Lưu tất cả thay đổi...")) # Thêm command placeholder
+    btn_save_settings.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="w") # Căn trái
+    """
+
+    # === HÀNG 2: Tab View  ===
+    settings_tabview = ctk.CTkTabview(settings_frame, fg_color="#FFFFFF", corner_radius=10)
+    settings_tabview.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
+    settings_tabview.grid_columnconfigure(0, weight=1)
+    
+    # ----------------------------------------------------
+    # --- TAB 1: ĐỔI MẬT KHẨU ---
+    # ----------------------------------------------------
+    tab_password = settings_tabview.add("Đổi Mật khẩu")
+    tab_password.grid_columnconfigure(1, weight=1) 
+    
+    password_form_frame = ctk.CTkFrame(tab_password, fg_color="transparent")
+    password_form_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=20, pady=20)
+    password_form_frame.grid_columnconfigure(1, weight=1)
+
+    # 1. Tên Đăng nhập 
+    user_label = ctk.CTkLabel(password_form_frame, text="Tên Đăng nhập:", font=ctk.CTkFont(size=13))
+    user_label.grid(row=0, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_username_pw = ctk.CTkEntry(password_form_frame, placeholder_text="admin_user (KHÔNG ĐỔI)", state='readonly')
+    entry_username_pw.grid(row=0, column=1, padx=(10, 0), pady=10, sticky="ew")
+    
+    # 2. Mật khẩu Cũ
+    old_pw_label = ctk.CTkLabel(password_form_frame, text="Mật khẩu CŨ:", font=ctk.CTkFont(size=13))
+    old_pw_label.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_old_pw = ctk.CTkEntry(password_form_frame, show="*", placeholder_text="Nhập mật khẩu cũ")
+    entry_old_pw.grid(row=1, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 3. Mật khẩu Mới
+    new_pw_label = ctk.CTkLabel(password_form_frame, text="Mật khẩu MỚI:", font=ctk.CTkFont(size=13))
+    new_pw_label.grid(row=2, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_new_pw = ctk.CTkEntry(password_form_frame, show="*", placeholder_text="Nhập mật khẩu mới")
+    entry_new_pw.grid(row=2, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 4. Xác nhận Mật khẩu Mới
+    confirm_pw_label = ctk.CTkLabel(password_form_frame, text="Xác nhận Mật khẩu:", font=ctk.CTkFont(size=13))
+    confirm_pw_label.grid(row=3, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_confirm_pw = ctk.CTkEntry(password_form_frame, show="*", placeholder_text="Xác nhận mật khẩu mới")
+    entry_confirm_pw.grid(row=3, column=1, padx=(10, 0), pady=10, sticky="ew")
+    
+    # 5. Nút Cập nhật Mật khẩu riêng
+    btn_change_pw = ctk.CTkButton(tab_password, 
+                                    text="Cập nhật Mật khẩu",
+                                    fg_color="#F44336",
+                                    hover_color="#D32F2F",
+                                    command= lambda:handle_password_change(
+                                                        get_current_username(),
+                                                        entry_old_pw, 
+                                                        entry_new_pw, 
+                                                        entry_confirm_pw))
+    btn_change_pw.grid(row=1, column=0, columnspan=2, padx=20, pady=20, sticky="w")
+
+
+    # ----------------------------------------------------
+    # --- TAB 2: ĐỔI TÊN HIỂN THỊ ---
+    # ----------------------------------------------------
+    tab_name = settings_tabview.add("Đổi Tên Hiển thị")
+    tab_name.grid_columnconfigure(1, weight=1) 
+    
+    name_form_frame = ctk.CTkFrame(tab_name, fg_color="transparent")
+    name_form_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=20, pady=20)
+    name_form_frame.grid_columnconfigure(1, weight=1)
+
+    # 1. Tên Đăng nhập 
+    user_label_name = ctk.CTkLabel(name_form_frame, text="Tên Đăng nhập:", font=ctk.CTkFont(size=13))
+    user_label_name.grid(row=0, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_username_name = ctk.CTkEntry(name_form_frame, placeholder_text="admin_user (KHÔNG ĐỔI)", state='readonly')
+    entry_username_name.grid(row=0, column=1, padx=(10, 0), pady=10, sticky="ew")
+    
+    # 2. Tên Hiển thị Mới
+    new_name_label = ctk.CTkLabel(name_form_frame, text="Tên Hiển thị MỚI:", font=ctk.CTkFont(size=13))
+    new_name_label.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_new_name = ctk.CTkEntry(name_form_frame, placeholder_text="Tên hiển thị mới")
+    entry_new_name.grid(row=1, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 3. MẬT KHẨU HIỆN TẠI 
+    verify_pw_name_label = ctk.CTkLabel(name_form_frame, text="Xác minh Mật khẩu:", font=ctk.CTkFont(size=13))
+    verify_pw_name_label.grid(row=2, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_verify_pw_name = ctk.CTkEntry(name_form_frame, show="*", placeholder_text="Mật khẩu hiện tại để xác minh")
+    entry_verify_pw_name.grid(row=2, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 4. Nút Cập nhật Tên 
+    btn_change_name = ctk.CTkButton(tab_name, 
+                                    text="Cập nhật Tên", 
+                                    fg_color="#F44336",
+                                    hover_color="#D32F2F",
+                                    command=lambda: handle_name_change(entry_new_name,entry_verify_pw_name
+                                    ))
+    btn_change_name.grid(row=3, column=0, columnspan=2, padx=20, pady=20, sticky="w")
+
+
+    # ----------------------------------------------------
+    # --- TAB 3: ĐỔI EMAIL ---
+    # ----------------------------------------------------
+    tab_email = settings_tabview.add("Đổi Email")
+    tab_email.grid_columnconfigure(1, weight=1)
+    
+    email_form_frame = ctk.CTkFrame(tab_email, fg_color="transparent")
+    email_form_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=20, pady=20)
+    email_form_frame.grid_columnconfigure(1, weight=1)
+
+    # 1. Tên Đăng nhập 
+    user_label_email = ctk.CTkLabel(email_form_frame, text="Tên Đăng nhập:", font=ctk.CTkFont(size=13))
+    user_label_email.grid(row=0, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_username_email = ctk.CTkEntry(email_form_frame, placeholder_text="admin_user (KHÔNG ĐỔI)", state='readonly')
+    entry_username_email.grid(row=0, column=1, padx=(10, 0), pady=10, sticky="ew")
+    
+    # 2. Email Mới
+    new_email_label = ctk.CTkLabel(email_form_frame, text="Email MỚI:", font=ctk.CTkFont(size=13))
+    new_email_label.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_new_email = ctk.CTkEntry(email_form_frame, placeholder_text="Địa chỉ email mới")
+    entry_new_email.grid(row=1, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 3. MẬT KHẨU HIỆN TẠI 
+    verify_pw_email_label = ctk.CTkLabel(email_form_frame, text="Xác minh Mật khẩu:", font=ctk.CTkFont(size=13))
+    verify_pw_email_label.grid(row=2, column=0, padx=(0, 10), pady=10, sticky="w")
+    entry_verify_pw_email = ctk.CTkEntry(email_form_frame, show="*", placeholder_text="Mật khẩu hiện tại để xác minh")
+    entry_verify_pw_email.grid(row=2, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+    # 4. Nút Cập nhật Email 
+    btn_change_email = ctk.CTkButton(tab_email, 
+                                     text="Cập nhật Email", 
+                                     fg_color="#F44336", 
+                                     hover_color="#D32F2F",
+                                     command=lambda: handle_email_change(entry_new_email,entry_verify_pw_email))
+    btn_change_email.grid(row=3, column=0, columnspan=2, padx=20, pady=20, sticky="w")
+
+    user_entries_to_fill = [
+        entry_username_pw,
+        entry_username_name,
+        entry_username_email       
+    ]
+    
+    def load_user_info(entries_list):
+        """
+        Điền tên đăng nhập vào các Entry chỉ đọc, bằng cách gọi hàm logic.
+        """
+        username = get_current_username() 
+        
+        if not username:
+            username = "LỖI: CHƯA ĐĂNG NHẬP" 
+            
+        for entry in entries_list:
+            entry.configure(state='normal')
+            entry.delete(0, 'end')
+            entry.insert(0, username)
+            entry.configure(state='readonly')
+    user_entries_to_fill = [
+        entry_username_pw,
+        entry_username_name,
+        entry_username_email
+    ]
+    load_user_info(user_entries_to_fill)
     content_frames["Cài đặt"] = settings_frame # Lưu Frame
     
 

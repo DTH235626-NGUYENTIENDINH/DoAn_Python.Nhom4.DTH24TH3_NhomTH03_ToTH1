@@ -9,6 +9,8 @@ import tkinter as tk
 import datetime
 import customtkinter as ctk
 import os
+import re
+import bcrypt
 EXPORT_FOLDER = "EXPORT_FOLDER"
 def format_date_for_sql(date_str):
     # Xử lý chuỗi rỗng
@@ -143,9 +145,11 @@ def generate_report_and_chart(report_type, n_str, date_from_str, date_to_str, fr
     # Vẽ biểu đồ
     canvas.draw()
 
+import tkinter.simpledialog as simpledialog 
 def export_data_to_excel(report_type, n_str, date_from_str, date_to_str):
-    
-    # 1. Validation và Lấy Dữ liệu (Giữ nguyên)
+    """
+    Hàm này không còn mở hộp thoại Save As mà yêu cầu nhập tên file.
+    """
     try:
         n = int(n_str)
     except ValueError:
@@ -157,23 +161,267 @@ def export_data_to_excel(report_type, n_str, date_from_str, date_to_str):
     if df is None or df.empty:
         messagebox.showinfo("Thông báo", "Không có dữ liệu để xuất.")
         return
-
-    # 2. XÂY DỰNG ĐƯỜNG DẪN CỐ ĐỊNH (FIXED PATH)
     
-    # Đảm bảo thư mục "BaoCao" tồn tại
+    # Mở hộp thoại nhập liệu Tkinter
+    file_name = simpledialog.askstring(
+        "Nhập Tên File", 
+        "Nhập tên cho file Excel:", 
+        # Tên gợi ý ban đầu
+        initialvalue=f"BaoCao_{report_type.replace(' ', '_').replace('á','a').replace('ớ','o')}"
+    )
+    
+    if not file_name:
+        messagebox.showinfo("Thông báo", "Đã hủy thao tác xuất file.")
+        return False
+        
+    # --- Đảm bảo thư mục tồn tại và tạo đường dẫn cố định ---
     if not os.path.exists(EXPORT_FOLDER):
         os.makedirs(EXPORT_FOLDER)
-    
-    # Tạo tên file: Ví dụ: Top_sach_duoc_muon_nhieu_nhat_Top10.xlsx
-    file_name = f"{report_type.replace(' ', '_').replace('á','a').replace('ớ','o')}_Top{n}.xlsx"
+        
+    # Thêm đuôi .xlsx nếu người dùng quên
+    if not file_name.lower().endswith('.xlsx'):
+        file_name += '.xlsx'
+        
     file_path = os.path.join(EXPORT_FOLDER, file_name)
 
     # 3. Xuất dữ liệu
     try:
-        # Sử dụng pandas để xuất DataFrame sang Excel
         df.to_excel(file_path, index=False, sheet_name="BaoCao")
-        messagebox.showinfo("Thành công", f"Đã xuất báo cáo thành công tại thư mục:\n{os.path.abspath(EXPORT_FOLDER)}\n\nTên file: {file_name}")
+        messagebox.showinfo("Thành công", f"Đã xuất báo cáo thành công tại thư mục:\n{os.path.abspath(EXPORT_FOLDER)}")
+        return True 
         
     except Exception as e:
         messagebox.showerror("Lỗi Xuất file", f"Không thể lưu file Excel: {e}")
+        return False
 
+def open_export_folder():
+    """Mở thư mục chứa các file báo cáo."""
+    abs_path = os.path.abspath(EXPORT_FOLDER)
+    
+    if not os.path.exists(abs_path):
+        messagebox.showinfo("Thông báo", f"Thư mục '{EXPORT_FOLDER}' chưa được tạo.")
+        os.makedirs(abs_path, exist_ok=True)
+        return
+
+    try:
+        if os.name == 'nt':  # Đối với Windows
+            os.startfile(abs_path)
+        elif os.uname().sysname == 'Darwin':  # Đối với macOS
+            subprocess.Popen(['open', abs_path])
+        else: # Đối với Linux
+            subprocess.Popen(['xdg-open', abs_path])
+            
+    except Exception as e:
+        messagebox.showerror("Lỗi", f"Không thể mở thư mục: {e}")
+    
+#==============================SETTINGS ACCOUNT======================================
+Username_HienTai = ""
+
+def set_logged_in_user(username):
+    """Hàm này CẦN được gọi sau khi đăng nhập thành công."""
+    global Username_HienTai
+    Username_HienTai = username
+
+def get_current_username():
+    """Trả về tên người dùng hiện tại, đảm bảo luôn có giá trị (vì đã đăng nhập)."""
+    global Username_HienTai
+    return Username_HienTai
+def verify_user_password(username, submitted_password):
+    """
+    Truy vấn CSDL để lấy hash mật khẩu và xác minh bằng bcrypt.
+    """   
+    if not username or not submitted_password:
+        return False
+        
+    conn = connect_to_db()
+    if conn is None:
+        return False
+        
+    cursor = conn.cursor()
+    password_match = False
+    
+    try:
+        cursor.execute("SELECT MatKhauHash FROM NguoiDungHeThong WHERE TenDangNhap = ?", (username,))
+        row = cursor.fetchone()
+        
+        if row:
+            stored_hash = row[0] # Giả định đây là hash (string)
+            
+            submitted_bytes = submitted_password.encode('utf-8')
+            
+            if isinstance(stored_hash, str):
+                stored_hash_bytes = stored_hash.encode('utf-8')
+            else:
+                stored_hash_bytes = stored_hash
+                
+            password_match = bcrypt.checkpw(submitted_bytes, stored_hash_bytes)
+            
+    except pyodbc.Error as e:
+        print(f"Lỗi truy vấn xác minh mật khẩu: {e}")
+    except Exception as e:
+        print(f"Lỗi hệ thống khi xác minh: {e}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+        
+    return password_match
+
+def handle_password_change(username, old_pw_entry, new_pw_entry, confirm_pw_entry):
+    """Xác minh mật khẩu cũ và cập nhật mật khẩu mới (hash)."""
+    old_password = old_pw_entry.get().strip()
+    new_password = new_pw_entry.get().strip()
+    confirm_password = confirm_pw_entry.get().strip()
+
+    if not all([old_password, new_password, confirm_password]):
+        messagebox.showerror("Lỗi", "Vui lòng điền đủ 3 trường mật khẩu.")
+        return False
+    
+    if new_password != confirm_password:
+        messagebox.showerror("Lỗi", "Mật khẩu Mới và Xác nhận Mật khẩu không khớp.")
+        return False
+
+    if not verify_user_password(username, old_password):
+        messagebox.showerror("Lỗi Xác minh", "Mật khẩu CŨ không chính xác.")
+        return False
+
+    # Logic cập nhật (Sử dụng hash)
+    conn = connect_to_db()
+    if conn:
+        try:
+            hashed_new_pw = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            cursor = conn.cursor()
+            sql_update = "UPDATE NguoiDungHeThong SET MatKhauHash = ? WHERE TenDangNhap = ?"
+            cursor.execute(sql_update, (hashed_new_pw, username))
+            conn.commit()
+            
+            messagebox.showinfo("Thành công", "Mật khẩu đã được cập nhật thành công!")
+            
+            # Xóa các trường sau khi thành công
+            old_pw_entry.delete(0, 'end')
+            new_pw_entry.delete(0, 'end')
+            confirm_pw_entry.delete(0, 'end')
+            return True
+        except Exception as e:
+            messagebox.showerror("Lỗi DB", f"Lỗi cập nhật mật khẩu: {e}")
+        finally:
+            conn.close()
+    return False
+
+def handle_email_change(new_email_entry, verification_entry):
+    """
+    Xác minh mật khẩu, kiểm tra định dạng email mới, và cập nhật Email trong DB.
+    """
+    # 1. Lấy dữ liệu và Username
+    username = get_current_username() 
+    new_email = new_email_entry.get().strip()
+    current_password = verification_entry.get().strip()
+    
+    # --- RÀNG BUỘC (VALIDATION) ---
+    if not all([username, new_email, current_password]):
+        messagebox.showerror("Lỗi", "Vui lòng nhập Email mới và Mật khẩu hiện tại.")
+        return False
+
+    # Kiểm tra định dạng Email
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", new_email):
+         messagebox.showerror("Lỗi", "Địa chỉ Email không hợp lệ.")
+         return False
+
+    # 2. XÁC MINH MẬT KHẨU CŨ 
+    if not verify_user_password(username, current_password):
+        messagebox.showerror("Lỗi Xác minh", "Mật khẩu hiện tại không chính xác. Không thể cập nhật.")
+        return False # Hàm verify_user_password đã được sửa để trả về True/False
+
+    # 3. CẬP NHẬT EMAIL
+    conn = connect_to_db()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Cập nhật cột Email trong bảng NguoiDungHeThong
+            sql_update = "UPDATE NguoiDungHeThong SET Email = ? WHERE TenDangNhap = ?"
+            cursor.execute(sql_update, (new_email, username))
+            conn.commit()
+            
+            messagebox.showinfo("Thành công", f"Đã cập nhật Email thành công!")
+            
+            # 4. Dọn dẹp form và cập nhật giao diện
+            verification_entry.delete(0, 'end')
+            new_email_entry.delete(0, 'end')           
+            
+            return True
+        except pyodbc.IntegrityError:
+            messagebox.showerror("Lỗi DB", "Email này có thể đã được sử dụng bởi tài khoản khác.")
+        except Exception as e:
+            messagebox.showerror("Lỗi DB", f"Lỗi khi cập nhật Email: {e}")
+        finally:
+            if conn: conn.close()
+    return False
+
+def handle_name_change(new_name_entry, verification_entry):
+    """
+    Xác minh mật khẩu, kiểm tra Tên hiển thị mới, và cập nhật HoTenHienThi trong DB.
+    """
+    # 1. Lấy dữ liệu và Username
+    username = get_current_username() 
+    new_name = new_name_entry.get().strip()
+    current_password = verification_entry.get().strip()
+    
+    # --- RÀNG BUỘC (VALIDATION) ---
+    if not all([username, new_name, current_password]):
+        messagebox.showerror("Lỗi", "Vui lòng nhập Tên hiển thị mới và Mật khẩu hiện tại.")
+        return False
+
+    # 2. XÁC MINH MẬT KHẨU CŨ (Bảo mật)
+    if not verify_user_password(username, current_password):
+        messagebox.showerror("Lỗi Xác minh", "Mật khẩu hiện tại không chính xác. Không thể cập nhật.")
+        return False 
+
+    # 3. CẬP NHẬT TÊN HIỂN THỊ
+    conn = connect_to_db()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Giả định cột là HoTenHienThi (hoặc cột tương ứng) trong bảng NguoiDungHeThong
+            sql_update = "UPDATE NguoiDungHeThong SET HoTen = ? WHERE TenDangNhap = ?"
+            cursor.execute(sql_update, (new_name, username))
+            conn.commit()
+            
+            messagebox.showinfo("Thành công", f"Đã cập nhật Tên hiển thị thành công!")
+            
+            # 4. Dọn dẹp form và cập nhật giao diện
+            verification_entry.delete(0, 'end')
+            new_name_entry.delete(0, 'end')           
+            
+            return True
+        except pyodbc.Error as e:
+            messagebox.showerror("Lỗi DB", f"Lỗi khi cập nhật Tên hiển thị: {e}")
+        finally:
+            if conn: conn.close()
+    return False
+
+
+
+
+
+def get_user_display_name():
+        """Lấy Họ Tên/Tên hiển thị của người dùng đang đăng nhập từ DB."""
+        username = get_current_username() 
+
+        if not username or username == "LỖI: CHƯA ĐĂNG NHẬP":
+            return "Bạn"
+        
+        conn = connect_to_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT HoTen FROM NguoiDungHeThong WHERE TenDangNhap = ?", (username,))
+                row = cursor.fetchone()
+                
+                if row:
+                    return row[0]            
+            except Exception as e:
+                print(f"Lỗi truy vấn tên hiển thị: {e}")
+            finally:
+                conn.close()
+                
+        return username

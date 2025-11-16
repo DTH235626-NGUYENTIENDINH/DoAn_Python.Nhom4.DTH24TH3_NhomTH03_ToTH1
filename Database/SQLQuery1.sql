@@ -132,6 +132,7 @@ select * from Sach
 select * from DocGia
 select * from PhieuMuon
 select * from ChiTietPhieuMuon
+select * from NguoiDungHeThong
 
 ALTER TABLE PhieuMuon
 DROP CONSTRAINT FK__PhieuMuon__MaDoc__45BE5BA9;

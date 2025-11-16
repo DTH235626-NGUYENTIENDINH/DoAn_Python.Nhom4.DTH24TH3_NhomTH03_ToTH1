@@ -2,13 +2,13 @@ from .db_connect import connect_to_db
 import pyodbc
 import bcrypt
 import re
-
-def handle_register(username, email, full_name, password, confirm_password):
+from handlers.persistense_manager_2 import *
+def handle_register(full_name, email, username, password, confirm_password):
     """
-    Xử lý đăng ký - ĐÃ SỬA để khớp với tên cột CSDL (TenDangNhap, MatKhauHash, HoTen)
+    Xử lý đăng ký (TenDangNhap, MatKhauHash, HoTen)
     """
 
-    if not all([username, email, full_name, password, confirm_password]):
+    if not all([full_name, email, username, password, confirm_password]):
         return False, "Vui lòng điền đầy đủ tất cả các trường."
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
         return False, "Định dạng email không hợp lệ."
@@ -40,7 +40,7 @@ def handle_register(username, email, full_name, password, confirm_password):
         conn.commit()
         return True, "Đăng ký thành công!"
     except Exception as e:
-        print(f"Lỗi SQL khi đăng ký: {str(e)}") # Thêm print để dễ debug
+        print(f"Lỗi SQL khi đăng ký: {str(e)}") 
         return False, f"Lỗi khi kết nối đến cơ sở dữ liệu: {str(e)}"
     finally:
         if cursor:
@@ -81,6 +81,7 @@ def handle_login(username, password):
             # Dùng bcrypt.checkpw để so sánh
             if bcrypt.checkpw(password.encode('utf-8'), hashed_password_from_db.encode('utf-8')):
                 # ĐĂNG NHẬP THÀNH CÔNG
+                set_logged_in_user(username)
                 return True, f"Chào mừng {full_name}!"
             else:
                 # Sai mật khẩu
