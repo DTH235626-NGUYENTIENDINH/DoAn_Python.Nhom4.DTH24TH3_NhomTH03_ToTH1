@@ -14,8 +14,8 @@ class App(ctk.CTk):
     WINDOW_HEIGHT = 600 
     # Kích thước cố định cho khung ở giữa
     FRAME_WIDTH = 350
-    FRAME_HEIGHT_REGISTER = 480 
-    FRAME_HEIGHT_LOGIN = 380    
+    FRAME_HEIGHT_REGISTER = 550
+    FRAME_HEIGHT_LOGIN = 450
 
     def __init__(self,on_login_success_callback):
         super().__init__()
@@ -112,7 +112,20 @@ class App(ctk.CTk):
                                                  placeholder_text="Mật khẩu", 
                                                  show="*", 
                                                  **entry_kwargs)
-        self.login_password_entry.pack(pady=10, padx=30)
+        self.login_password_entry.pack(pady=(10,2), padx=30)
+
+        self.login_show_pass_var = ctk.BooleanVar(value=False)
+
+        login_show_pass_check = ctk.CTkCheckBox(
+            frame,
+            text="Hiện mật khẩu",
+            variable=self.login_show_pass_var,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_login_password_visibility, # Gọi phương thức MỚI
+            text_color=("#1A1A1A", "white")
+        )
+        login_show_pass_check.pack(pady=(10,10), padx=30, anchor="w")
 
         # NÚT ĐĂNG NHẬP
         login_button = ctk.CTkButton(frame, text="Đăng nhập", 
@@ -122,7 +135,7 @@ class App(ctk.CTk):
                                      fg_color="#2196F3",    
                                      hover_color="#64B5F6",
                                      command=self.handle_login) 
-        login_button.pack(pady=(25, 15), padx=30) 
+        login_button.pack(pady=(10, 15), padx=30) 
 
         # Nút chuyển đổi
         switch_button = ctk.CTkButton(
@@ -134,7 +147,9 @@ class App(ctk.CTk):
             font=ctk.CTkFont(weight="bold", underline=True, size=13),
             command=self.show_register_frame
         )
-        switch_button.pack(pady=(10, 30), padx=30)
+        switch_button.pack(pady=(15, 15), padx=30)
+
+        
 
     def setup_register_ui(self):
         """Thiết lập giao diện Đăng ký (Đã điều chỉnh màu sắc và lề)"""
@@ -170,7 +185,7 @@ class App(ctk.CTk):
         self.reg_password_entry.pack(pady=5, padx=30)
 
         self.reg_confirm_entry = ctk.CTkEntry(frame, placeholder_text="Xác nhận mật khẩu", show="*", **entry_kwargs)
-        self.reg_confirm_entry.pack(pady=5, padx=30)
+        self.reg_confirm_entry.pack(pady=(5,2), padx=30)
 
         self.reg_show_pass_var = ctk.BooleanVar(value=False)
 
@@ -261,6 +276,15 @@ class App(ctk.CTk):
             self.destroy()  # Đóng cửa sổ đăng nhập
         else:
             self.show_message(message, is_error=True)
+
+    def toggle_login_password_visibility(self):
+
+        if self.login_show_pass_var.get():  # Trả về True nếu checkbox được tick
+            # Nếu được tick, đặt show="" để hiển thị văn bản
+            self.login_password_entry.configure(show="")
+        else:  # Trả về False nếu checkbox không được tick
+            # Nếu không tick, đặt show="*" để ẩn văn bản
+            self.login_password_entry.configure(show="*")
 
     def toggle_password_visibility(self):
 
